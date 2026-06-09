@@ -1,0 +1,54 @@
+{
+  "name": "DripTeste",
+  "short_name": "DripTeste",
+  "description": "Controle de pesagem inicial e final para DripTeste.",
+  "lang": "pt-BR",
+  "start_url": "./login.html",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#eef3f8",
+  "theme_color": "#1663d8",
+  "icons": [
+    {
+      "src": "icons/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "icons/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "icons/icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ],
+  "shortcuts": [
+    {
+      "name": "Pesagem inicial",
+      "short_name": "Inicial",
+      "url": "./DripTeste.html"
+    },
+    {
+      "name": "Pesagem final",
+      "short_name": "Final",
+      "url": "./DripTestF.html"
+    },
+    {
+      "name": "Agenda",
+      "short_name": "Agenda",
+      "url": "./DripSchedule.html"
+    },
+    {
+      "name": "Laudos",
+      "short_name": "Laudos",
+      "url": "./DripReports.html"
+    }
+  ]
+}

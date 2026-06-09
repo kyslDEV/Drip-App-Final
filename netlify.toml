@@ -1,0 +1,33 @@
+[build]
+  publish = "."
+  command = ""
+
+[[headers]]
+  for = "/service-worker.js"
+  [headers.values]
+    Cache-Control = "no-cache"
+
+[[headers]]
+  for = "/*.html"
+  [headers.values]
+    Cache-Control = "no-cache"
+
+[[redirects]]
+  from = "/inicial"
+  to = "/DripTeste.html"
+  status = 200
+
+[[redirects]]
+  from = "/final"
+  to = "/DripTestF.html"
+  status = 200
+
+[[redirects]]
+  from = "/agenda"
+  to = "/DripSchedule.html"
+  status = 200
+
+[[redirects]]
+  from = "/relatorios"
+  to = "/DripReports.html"
+  status = 200

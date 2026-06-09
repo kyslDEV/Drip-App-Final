@@ -1,0 +1,1404 @@
+﻿<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="theme-color" content="#1663d8" />
+  <meta name="description" content="DripTest - relatórios operacionais" />
+  <link rel="manifest" href="manifest.webmanifest" />
+  <link rel="icon" href="icons/icon.svg" type="image/svg+xml" />
+  <link rel="stylesheet" href="drip-theme.css?v=ui-2026-3" />
+  <title>DripTest - Relatórios</title>
+  <style>
+    :root {
+      --bg: #eef3f8;
+      --surface: #ffffff;
+      --surface-2: #f8fbff;
+      --text: #172033;
+      --muted: #667085;
+      --line: #dbe6f2;
+      --accent: #1663d8;
+      --accent-strong: #0f4eb0;
+      --shadow: 0 10px 26px rgba(32, 47, 72, 0.09);
+      --radius: 10px;
+      font-family: Inter, system-ui, -apple-system, "Segoe UI", Roboto, Arial, sans-serif;
+    }
+
+    * { box-sizing: border-box; }
+    body {
+      min-height: 100vh;
+      margin: 0;
+      color: var(--text);
+      background: linear-gradient(180deg, rgba(255,255,255,0.82), rgba(238,243,248,0.96) 48%, #ffffff 100%);
+    }
+
+    button, a, input { font: inherit; }
+    .page { width: min(100% - 24px, 1140px); margin: 0 auto; padding: 20px 0; }
+    .topbar, .panel, .card {
+      background: var(--surface);
+      border: 1px solid rgba(219, 230, 242, 0.76);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+    }
+
+    .topbar {
+      display: grid;
+      grid-template-columns: auto 1fr auto;
+      align-items: center;
+      gap: 16px;
+      padding: 14px 16px;
+      margin-bottom: 12px;
+    }
+
+    .logo {
+      width: 50px;
+      height: 50px;
+      border-radius: 12px;
+      background: linear-gradient(135deg, var(--accent), #0bb5d8);
+      display: grid;
+      place-items: center;
+      color: #fff;
+      font-size: 18px;
+      font-weight: 800;
+      box-shadow: 0 10px 20px rgba(22, 99, 216, 0.18);
+    }
+
+    h1, h2, h3 { margin: 0; }
+    .subtitle { margin: 4px 0 0; color: var(--muted); font-size: 14px; }
+    .header-actions, .toolbar {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      justify-content: flex-end;
+      flex-wrap: wrap;
+    }
+
+    .panel { padding: 16px; }
+    button, .button-link {
+      min-height: 40px;
+      border-radius: 8px;
+      border: 1px solid transparent;
+      padding: 0 12px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      cursor: pointer;
+      text-decoration: none;
+      font-weight: 700;
+      white-space: nowrap;
+      transition: background 160ms ease, border-color 160ms ease, transform 160ms ease;
+    }
+
+    button:hover, .button-link:hover { transform: translateY(-1px); }
+    .primary { background: var(--accent); color: #fff; }
+    .primary:hover { background: var(--accent-strong); }
+    .ghost { color: var(--accent); background: #fff; border-color: rgba(22, 99, 216, 0.22); }
+    .stats { display: grid; grid-template-columns: repeat(4, minmax(160px, 1fr)); gap: 10px; margin: 12px 0; }
+    .stat, .card { padding: 16px; background: var(--surface-2); border: 1px solid var(--line); border-radius: var(--radius); }
+    .stat-label { display: block; color: var(--muted); font-size: 12px; font-weight: 800; text-transform: uppercase; }
+    .stat-value { display: block; margin-top: 6px; font-size: 22px; font-weight: 800; }
+    .grid { display: grid; grid-template-columns: 1.05fr 0.95fr; gap: 12px; margin-top: 12px; }
+    .list { display: grid; gap: 10px; margin-top: 14px; }
+    .list-item { padding: 12px 14px; background: #fff; border: 1px solid rgba(219, 230, 242, 0.76); border-radius: 10px; }
+    .list-item strong { display: block; margin-bottom: 4px; }
+    .helper {
+      margin-top: 12px;
+      padding: 12px 14px;
+      border-radius: 10px;
+      border: 1px dashed rgba(22, 99, 216, 0.28);
+      color: var(--muted);
+      background: rgba(22, 99, 216, 0.05);
+      font-size: 13px;
+      line-height: 1.5;
+    }
+
+    .toolbar-note {
+      margin-top: 12px;
+      color: var(--muted);
+      font-size: 13px;
+    }
+
+    .helper-copy {
+      margin: 0 0 18px;
+      padding: 12px 14px;
+      border-radius: 14px;
+      background: rgba(22, 99, 216, 0.08);
+      border: 1px solid rgba(22, 99, 216, 0.16);
+      color: #234;
+      line-height: 1.45;
+    }
+
+    .status-banner {
+      margin-top: 12px;
+      padding: 12px 14px;
+      border-radius: 10px;
+      border: 1px solid var(--line);
+      background: #f7faff;
+      color: #35516d;
+      font-size: 13px;
+      line-height: 1.5;
+    }
+
+    .status-banner.is-ok {
+      background: #eaf8f0;
+      border-color: rgba(30, 123, 69, 0.18);
+      color: #1e7b45;
+    }
+
+    .status-banner.is-warn {
+      background: #fff7e8;
+      border-color: rgba(154, 91, 0, 0.18);
+      color: #9a5b00;
+    }
+
+    .status-banner.is-error {
+      background: #fff1f2;
+      border-color: rgba(200, 63, 73, 0.18);
+      color: #a9313a;
+    }
+
+    pre {
+      margin: 14px 0 0;
+      padding: 14px;
+      border-radius: 10px;
+      border: 1px solid var(--line);
+      background: #f5f9ff;
+      white-space: pre-wrap;
+      font-family: Consolas, "Courier New", monospace;
+      font-size: 13px;
+    }
+
+    #importInput { display: none; }
+    .print-preview-modal {
+      position: fixed;
+      inset: 0;
+      background: rgba(12, 20, 32, 0.55);
+      display: none;
+      align-items: center;
+      justify-content: center;
+      padding: 12px;
+      z-index: 60;
+    }
+    .print-preview-modal.show { display: flex; }
+    .print-preview-card {
+      width: min(100%, 980px);
+      height: min(100%, 92vh);
+      background: #fff;
+      border: 1px solid var(--line);
+      border-radius: 10px;
+      box-shadow: var(--shadow);
+      display: grid;
+      grid-template-rows: auto 1fr;
+      overflow: hidden;
+    }
+    .print-preview-toolbar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      padding: 10px 12px;
+      border-bottom: 1px solid var(--line);
+      background: #f4f8ff;
+      flex-wrap: wrap;
+    }
+    .print-preview-actions {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+    .print-preview-frame {
+      width: 100%;
+      height: 100%;
+      border: 0;
+      background: #fff;
+    }
+
+    @media (max-width: 880px) {
+      .topbar, .stats, .grid { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+  <div class="page">
+    <header class="topbar" role="banner" aria-label="Cabeçalho DripTest">
+      <div class="logo" aria-hidden="true">DT</div>
+      <div>
+        <h1>DripTest</h1>
+        <p class="subtitle">Laudos</p>
+      </div>
+      <div class="header-actions">
+        <a href="DripTeste.html" class="button-link ghost">Inicial</a>
+        <a href="DripTestF.html" class="button-link ghost">Final</a>
+        <a href="DripSchedule.html" class="button-link ghost">Agenda</a>
+        <a href="DripSettings.html" class="button-link ghost">Banco</a>
+      </div>
+    </header>
+
+    <main class="panel" role="main" aria-labelledby="reportTitle">
+      <div class="toolbar">
+        <div>
+          <h2 id="reportTitle">Painel de laudos</h2>
+        </div>
+        <div class="header-actions">
+          <button id="refreshBtn" class="ghost" type="button">Atualizar</button>
+          <button id="syncBankBtn" class="ghost" type="button">Sincronizar banco</button>
+          <button id="issueOfficialBtn" class="primary" type="button">Emitir no banco</button>
+          <button id="copyBtn" class="ghost" type="button">Copiar laudo</button>
+          <button id="shareWhatsappBtn" class="ghost" type="button">WhatsApp</button>
+          <button id="excelBtn" class="ghost" type="button">CSV</button>
+          <button id="analysisSheetBtn" class="ghost" type="button">Planilha análise</button>
+          <button id="pdfBtn" class="ghost" type="button">Laudo PDF</button>
+          <button id="importBtn" class="primary" type="button">Importar CSV</button>
+          <input id="importInput" type="file" accept=".csv,text/csv" />
+        </div>
+      </div>
+
+      <p class="helper-copy">Confira os indicadores, revise a prévia e depois escolha como deseja compartilhar o resultado: copiar texto, exportar CSV, sincronizar os dados ou emitir o laudo oficial no banco.</p>
+      <div id="backendStatus" class="status-banner is-warn" role="status">Modo local ativo. Configure a API para sincronizar os dados e emitir o laudo oficial no banco central.</div>
+
+      <section class="stats" aria-label="Resumo geral">
+        <div class="stat"><span class="stat-label">Pesagens iniciais</span><span class="stat-value" id="initialCount">0</span></div>
+        <div class="stat"><span class="stat-label">Pesagens finais</span><span class="stat-value" id="finalizedCount">0</span></div>
+        <div class="stat"><span class="stat-label">Lotes únicos</span><span class="stat-value" id="lotCount">0</span></div>
+        <div class="stat"><span class="stat-label">Tempo médio</span><span class="stat-value" id="averageTime">-</span></div>
+      </section>
+
+      <section class="stats" aria-label="Indicadores consolidados">
+        <div class="stat"><span class="stat-label">Tempo total</span><span class="stat-value" id="totalTime">0 min</span></div>
+        <div class="stat"><span class="stat-label">Peso bruto total</span><span class="stat-value" id="totalGross">0 g</span></div>
+        <div class="stat"><span class="stat-label">Peso líquido inicial</span><span class="stat-value" id="totalNet">0 g</span></div>
+        <div class="stat"><span class="stat-label">Absorção total</span><span class="stat-value" id="totalLoss">0 g</span></div>
+      </section>
+
+      <div class="grid">
+        <section class="card" aria-labelledby="recentTitle">
+          <h3 id="recentTitle">Últimas pesagens</h3>
+          <div class="list" id="recordList"></div>
+        </section>
+
+        <section class="card" aria-labelledby="previewTitle">
+          <h3 id="previewTitle">Prévia do laudo</h3>
+          <pre id="reportPreview">Carregando...</pre>
+        </section>
+      </div>
+
+      <section class="card" aria-labelledby="lotSummaryTitle" style="margin-top:12px;">
+        <h3 id="lotSummaryTitle">Resumo por lote (Drip média)</h3>
+        <p class="toolbar-note">Use este quadro para comparar rapidamente o desempenho dos lotes e identificar onde há necessidade de revisão.</p>
+        <div id="lotSummary" class="list"></div>
+      </section>
+
+      <section class="card" aria-labelledby="officialReportsTitle" style="margin-top:12px;">
+        <h3 id="officialReportsTitle">Laudos oficiais no banco</h3>
+        <p id="officialHint" class="toolbar-note">Esta area mostra os ultimos laudos emitidos no backend para consulta e rastreabilidade.</p>
+        <div id="officialReportList" class="list"></div>
+      </section>
+    </main>
+  </div>
+  <div id="printPreviewModal" class="print-preview-modal" role="dialog" aria-modal="true" aria-label="Prévia do laudo para impressão">
+    <div class="print-preview-card">
+      <div class="print-preview-toolbar">
+        <strong>Prévia do laudo</strong>
+        <div class="print-preview-actions">
+          <button id="printPreviewPrintBtn" class="ghost" type="button">Imprimir</button>
+          <button id="printPreviewHtmlBtn" class="ghost" type="button">Baixar HTML</button>
+          <button id="printPreviewCloseBtn" class="primary" type="button">Fechar</button>
+        </div>
+      </div>
+      <iframe id="printPreviewFrame" class="print-preview-frame" title="Prévia do laudo"></iframe>
+    </div>
+  </div>
+  <nav class="mobile-tabbar" aria-label="Navegação principal">
+    <a href="DripTeste.html">Inicial</a>
+    <a href="DripTestF.html">Final</a>
+    <a href="DripSchedule.html">Agenda</a>
+    <a class="active" href="DripReports.html">Laudos</a>
+    <a href="DripSettings.html">Banco</a>
+  </nav>
+  <div class="mobile-tabbar-spacer" aria-hidden="true"></div>
+
+  <script src="drip-data.js?v=report-accents-3"></script>
+  <script src="drip-ui.js?v=ui-2026-3"></script>
+  <script src="drip-api.js"></script>
+  <script src="drip-sync.js"></script>
+  <script>
+    const initialCountEl = document.getElementById('initialCount');
+    const finalizedCountEl = document.getElementById('finalizedCount');
+    const lotCountEl = document.getElementById('lotCount');
+    const averageTimeEl = document.getElementById('averageTime');
+    const totalTimeEl = document.getElementById('totalTime');
+    const totalGrossEl = document.getElementById('totalGross');
+    const totalNetEl = document.getElementById('totalNet');
+    const totalLossEl = document.getElementById('totalLoss');
+    const recordList = document.getElementById('recordList');
+    const reportPreview = document.getElementById('reportPreview');
+    const refreshBtn = document.getElementById('refreshBtn');
+    const syncBankBtn = document.getElementById('syncBankBtn');
+    const issueOfficialBtn = document.getElementById('issueOfficialBtn');
+    const copyBtn = document.getElementById('copyBtn');
+    const shareWhatsappBtn = document.getElementById('shareWhatsappBtn');
+    const excelBtn = document.getElementById('excelBtn');
+    const analysisSheetBtn = document.getElementById('analysisSheetBtn');
+    const pdfBtn = document.getElementById('pdfBtn');
+    const importBtn = document.getElementById('importBtn');
+    const importInput = document.getElementById('importInput');
+    const backendStatusEl = document.getElementById('backendStatus');
+    const officialHintEl = document.getElementById('officialHint');
+    const officialReportListEl = document.getElementById('officialReportList');
+    const printPreviewModal = document.getElementById('printPreviewModal');
+    const printPreviewFrame = document.getElementById('printPreviewFrame');
+    const printPreviewPrintBtn = document.getElementById('printPreviewPrintBtn');
+    const printPreviewHtmlBtn = document.getElementById('printPreviewHtmlBtn');
+    const printPreviewCloseBtn = document.getElementById('printPreviewCloseBtn');
+
+    let lastOfficialReport = null;
+    let lastGeneratedPdfHtml = '';
+    let lastGeneratedDocumentSlug = 'driptest-documento';
+
+    function normalizeText(value) {
+      return String(value == null ? '' : value).trim().toLowerCase();
+    }
+
+    function formatNumber(value) {
+      return Number.isFinite(value) ? value.toLocaleString('pt-BR', { maximumFractionDigits: 2 }) : '-';
+    }
+
+    function formatPrecisePercent(value) {
+      return Number.isFinite(value) ? DripData.formatPreciseNumber(value, 6) : '-';
+    }
+
+    function toDate(value) {
+      if (value == null || value === '') return null;
+      const date = new Date(value);
+      return Number.isNaN(date.getTime()) ? null : date;
+    }
+
+    function toTimestamp(value) {
+      if (typeof value === 'number' && Number.isFinite(value)) return value;
+      const date = toDate(value);
+      return date ? date.getTime() : null;
+    }
+
+    function diffMinutes(startValue, endValue) {
+      const start = toTimestamp(startValue);
+      const end = toTimestamp(endValue);
+      if (!Number.isFinite(start) || !Number.isFinite(end) || end < start) return null;
+      return Math.round((end - start) / 60000);
+    }
+
+    function formatDate(value) {
+      const date = toDate(value);
+      return date ? date.toLocaleString('pt-BR', {
+        day: '2-digit',
+        month: '2-digit',
+        year: 'numeric',
+        hour: '2-digit',
+        minute: '2-digit'
+      }) : '-';
+    }
+
+    function formatDateOnly(value) {
+      const text = String(value == null ? '' : value).trim();
+      const brMatch = text.match(/^(\d{2})\/(\d{2})\/(\d{4})$/);
+      if (brMatch) return `${brMatch[1]}/${brMatch[2]}/${brMatch[3]}`;
+      const isoMatch = text.match(/^(\d{4})-(\d{2})-(\d{2})/);
+      if (isoMatch) return `${isoMatch[3]}/${isoMatch[2]}/${isoMatch[1]}`;
+      const date = toDate(value);
+      return date ? date.toLocaleDateString('pt-BR', {
+        day: '2-digit',
+        month: '2-digit',
+        year: 'numeric'
+      }) : '-';
+    }
+
+    function getUserConfig() {
+      try {
+        const raw = localStorage.getItem('drip_user');
+        return raw ? JSON.parse(raw) : {};
+      } catch (error) {
+        return {};
+      }
+    }
+
+    function escapeHtml(value) {
+      return String(value == null ? '' : value)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#39;');
+    }
+
+    function joinOrDash(values) {
+      return Array.isArray(values) && values.length ? values.join(', ') : '-';
+    }
+
+    function buildReportNumber(report, hash) {
+      const date = toDate(report && report.generatedAt) || new Date();
+      const datePart = date.toISOString().slice(0, 10).replace(/-/g, '');
+      return `DRIP-${datePart}-${String(hash || 'LOCAL').slice(0, 8).toUpperCase()}`;
+    }
+
+    function setBackendStatus(message, tone) {
+      backendStatusEl.textContent = message;
+      backendStatusEl.className = 'status-banner';
+      if (tone === 'ok') {
+        backendStatusEl.classList.add('is-ok');
+      } else if (tone === 'error') {
+        backendStatusEl.classList.add('is-error');
+      } else {
+        backendStatusEl.classList.add('is-warn');
+      }
+    }
+
+    function getCurrentReport() {
+      return DripData.buildReportData();
+    }
+
+    function getCurrentScope(report) {
+      const user = getUserConfig();
+      const trace = report && report.laudo && report.laudo.traceability ? report.laudo.traceability : {};
+      const fallbackLot = Array.isArray(trace.lots) && trace.lots.length === 1 ? trace.lots[0] : '';
+      const fallbackFabDate = Array.isArray(trace.fabricationDates) && trace.fabricationDates.length === 1 ? trace.fabricationDates[0] : '';
+      return {
+        user,
+        lotCode: String(user.lot || fallbackLot || '').trim(),
+        fabricationDate: String(user.fabDate || fallbackFabDate || '').trim(),
+        trace
+      };
+    }
+
+    async function resolveOfficialLotTargets(report) {
+      if (!DripApi.isEnabled()) {
+        return { ok: false, reason: 'api_disabled', lotIds: [], scope: getCurrentScope(report) };
+      }
+
+      const scope = getCurrentScope(report);
+      if (!scope.lotCode) {
+        return { ok: false, reason: 'missing_lot', lotIds: [], scope };
+      }
+
+      const lots = await DripApi.listLots(500);
+      const candidates = Array.isArray(lots) ? lots.filter((item) => {
+        const sameLot = normalizeText(item.lot_code) === normalizeText(scope.lotCode);
+        const sameFabDate = !scope.fabricationDate || normalizeText(item.fabrication_date) === normalizeText(scope.fabricationDate);
+        return sameLot && sameFabDate;
+      }) : [];
+
+      return {
+        ok: candidates.length > 0,
+        reason: candidates.length ? 'ok' : 'not_found',
+        lotIds: candidates.map((item) => item.lot_id),
+        candidates,
+        scope
+      };
+    }
+
+    function renderOfficialReports(reports) {
+      officialReportListEl.replaceChildren();
+
+      if (!Array.isArray(reports) || !reports.length) {
+        const empty = document.createElement('div');
+        empty.className = 'list-item';
+        empty.textContent = 'Nenhum laudo oficial encontrado no banco para consulta.';
+        officialReportListEl.appendChild(empty);
+        return;
+      }
+
+      reports.forEach((report) => {
+        const item = document.createElement('div');
+        item.className = 'list-item';
+        const title = document.createElement('strong');
+        title.textContent = report.report_number || 'Laudo oficial';
+        const meta = document.createElement('div');
+        meta.textContent = `Status ${report.status || '-'} | Emitido ${formatDate(report.issued_at || report.created_at)} | Lote técnico ${report.lot_id || 'agregado'}`;
+        const subtitle = document.createElement('div');
+        subtitle.textContent = report.title || 'Laudo técnico de análise de gotejamento';
+        item.append(title, meta, subtitle);
+        officialReportListEl.appendChild(item);
+      });
+    }
+
+    async function loadOfficialReports() {
+      if (!DripApi.isEnabled()) {
+        officialHintEl.textContent = 'Ative a API para consultar o historico de laudos oficiais emitidos no backend.';
+        renderOfficialReports([]);
+        return;
+      }
+
+      try {
+        const reports = await DripApi.listReports(12);
+        officialHintEl.textContent = 'Historico recente de laudos oficiais emitidos e salvos no banco central.';
+        renderOfficialReports(reports);
+      } catch (error) {
+        officialHintEl.textContent = 'Não foi possível consultar o histórico de laudos oficiais no backend.';
+        renderOfficialReports([]);
+      }
+    }
+
+    async function syncDataToBackend() {
+      if (!DripApi.isEnabled()) {
+        setBackendStatus('Modo local ativo. Configure a API para sincronizar os dados e emitir o laudo oficial no banco central.', 'warn');
+        return { skipped: true, reason: 'api_disabled' };
+      }
+
+      setBackendStatus('Sincronizando pesagens e testes locais com o banco central...', 'warn');
+      const result = await DripSync.pushLocalStore({ includeReport: false });
+      if (result && result.skipped) {
+        setBackendStatus('A API não está configurada. Os dados permanecem somente no aparelho.', 'warn');
+        return result;
+      }
+
+      if (result && Array.isArray(result.conflicts) && result.conflicts.length) {
+        setBackendStatus(`Sincronização concluída com ${result.conflicts.length} conflito(s). Revise os dados antes da emissão oficial.`, 'warn');
+      } else {
+        setBackendStatus('Dados sincronizados com sucesso no banco central.', 'ok');
+      }
+
+      return result;
+    }
+
+    async function emitOfficialReport() {
+      const report = getCurrentReport();
+      if (!report.initialRecords.length) {
+        throw new Error('Não existem pesagens para emitir o laudo oficial.');
+      }
+
+      await syncDataToBackend();
+      const resolution = await resolveOfficialLotTargets(report);
+      if (!resolution.ok) {
+        if (resolution.reason === 'missing_lot') {
+          throw new Error('Defina lote e data de fabricacao no cadastro inicial para emitir o laudo oficial.');
+        }
+        throw new Error('Não foi possível localizar o lote sincronizado no banco para emitir o laudo oficial.');
+      }
+
+      const scopeLabel = resolution.scope.fabricationDate
+        ? `${resolution.scope.lotCode} / ${resolution.scope.fabricationDate}`
+        : resolution.scope.lotCode;
+      setBackendStatus(`Emitindo laudo oficial no banco para ${scopeLabel}...`, 'warn');
+      const payload = resolution.lotIds.length === 1
+        ? { lot_id: resolution.lotIds[0] }
+        : { lot_ids: resolution.lotIds };
+      const issued = await DripApi.createReport(payload);
+      lastOfficialReport = issued;
+      setBackendStatus(`Laudo oficial emitido com sucesso: ${issued.report_number || 'sem número'} .`, 'ok');
+      await loadOfficialReports();
+      return issued;
+    }
+
+    function createPdfHtml(report, options) {
+      const user = options.user || {};
+      const reportNumber = options.reportNumber || buildReportNumber(report, options.hash);
+      const hash = options.hash || '-';
+      const shortHash = hash && hash !== '-' ? `${String(hash).slice(0, 12)}...` : '-';
+      const sourceLabel = options.sourceLabel || `App Web DripTest | store ${DripData.STORE_VERSION || '-'}`;
+      const trace = report.laudo && report.laudo.traceability ? report.laudo.traceability : {};
+      const conclusion = report.conclusion || (
+        report.totals.initialRecords === 0
+          ? 'Sem registros de pesagem para emissão de conclusão técnica.'
+          : report.totals.finalizedRecords === 0
+            ? 'Laudo parcial: há pesagens iniciais registradas, mas ainda não existem pesagens finais para conclusão de perda/absorção.'
+            : report.totals.pendingRecords > 0
+              ? 'Laudo parcial: existem pesagens finais registradas, mas ainda há amostras pendentes de finalização.'
+              : 'Laudo concluído: todas as amostras registradas possuem pesagem final e indicadores consolidados de perda/absorção.'
+      );
+      const formatWeight = (value) => value == null || value === '' ? '-' : `${formatNumber(Number(value))} g`;
+      const formatPercentCell = (value) => value == null || value === '' ? '-' : `${formatPrecisePercent(Number(value))} %`;
+      const formatMinutes = (value) => value == null || value === '' ? '-' : `${formatNumber(Number(value))} min`;
+      const renderTable = (headers, rows, className) => {
+        const headHtml = headers.map((header) => `<th>${escapeHtml(header)}</th>`).join('');
+        const bodyHtml = rows.length
+          ? rows.map((row) => `<tr>${row.map((cell) => `<td>${cell}</td>`).join('')}</tr>`).join('')
+          : `<tr><td colspan="${headers.length}" class="muted">Nenhum dado disponível.</td></tr>`;
+        return `<div class="table-wrap"><table class="${className || ''}"><thead><tr>${headHtml}</tr></thead><tbody>${bodyHtml}</tbody></table></div>`;
+      };
+
+      const styles = `
+        <style>
+          @page{margin:10mm}
+          *{box-sizing:border-box}
+          body{font-family:Arial,Helvetica,sans-serif;color:#111;padding:0;font-size:10.4px;line-height:1.28}
+          header{border-bottom:2px solid #111;padding-bottom:8px;margin-bottom:10px}
+          h1{font-size:17px;margin:0 0 5px;text-transform:uppercase;letter-spacing:.04em}
+          h2{font-size:12.5px;margin:11px 0 5px;border-bottom:1px solid #cfd6de;padding-bottom:3px;page-break-after:avoid}
+          p{margin:4px 0}
+          ul{margin:6px 0 0 15px;padding:0;columns:2;column-gap:22px}
+          li{margin:2px 0}
+          .doc-meta{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:5px 16px;margin-top:7px}
+          .summary-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:7px;margin:9px 0}
+          .summary-card{border:1px solid #ccd6e0;background:#f8fafc;padding:7px;border-radius:4px}
+          .summary-label{display:block;color:#4c5a67;font-size:8px;text-transform:uppercase;font-weight:bold;letter-spacing:.05em}
+          .summary-value{display:block;margin-top:4px;font-size:13px;font-weight:bold}
+          .laudo-box{border:1px solid #d7dee6;padding:8px;margin:7px 0;background:#fbfcfd;border-radius:4px}
+          .section-grid{display:grid;grid-template-columns:1.15fr .85fr;gap:8px;align-items:start}
+          .audit-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:5px 12px;margin-top:6px}
+          .audit-tag{display:inline-block;border:1px solid #cfd6de;padding:2px 7px;border-radius:999px;font-size:8px;text-transform:uppercase;letter-spacing:.05em;color:#46515c;background:#fff}
+          .conclusion{border:1.2px solid #111;padding:8px;margin-top:8px;font-weight:bold;background:#f9fbfc}
+          .muted{color:#5d6975}
+          .table-wrap{margin-top:7px;page-break-inside:auto}
+          table{width:100%;border-collapse:collapse;table-layout:fixed}
+          th,td{border:1px solid #d7dee6;padding:3px 4px;text-align:left;font-size:8px;vertical-align:top;word-break:normal;overflow-wrap:break-word}
+          th{background:#eef3f8;font-size:7.2px;text-transform:uppercase;letter-spacing:.02em}
+          .table-audit th,.table-audit td{font-size:7.4px;line-height:1.12}
+          .small{font-size:7.2px}
+          .mono{font-family:"Courier New",monospace;word-break:break-all}
+          .hash-line{word-break:break-all;overflow-wrap:anywhere}
+          .matrix-title{page-break-before:always}
+          .matrix-title + .table-wrap{margin-top:5px}
+          .matrix-follow{page-break-before:auto}
+          .table-audit tr{page-break-inside:avoid}
+          .warning{color:#9a3412;font-weight:bold}
+          footer{margin-top:10px;border-top:1px solid #d7dee6;padding-top:7px;color:#4f5d6a;font-size:8px}
+        </style>`;
+
+      let html = `<!doctype html><html><head><meta charset="utf-8"><title>Laudo DripTest - Análise de Gotejamento</title>${styles}</head><body>`;
+      html += `<header>`;
+      html += `<h1>Laudo técnico de análise de gotejamento</h1>`;
+      html += `<div class="doc-meta">`;
+      html += `<div><strong>Número do laudo:</strong> ${escapeHtml(reportNumber)}</div>`;
+      html += `<div><strong>Gerado em:</strong> ${escapeHtml(formatDate(report.generatedAt))}</div>`;
+      html += `<div><strong>Lote:</strong> ${escapeHtml(user.lot || joinOrDash(trace.lots))}</div>`;
+      html += `<div><strong>Setor da análise:</strong> ${escapeHtml(user.sectorName || user.plantName || joinOrDash(trace.plants))}</div>`;
+      html += `<div><strong>Turno:</strong> ${escapeHtml(user.shift || user.turno || joinOrDash(trace.shifts))}</div>`;
+      html += `<div><strong>Data fabricação:</strong> ${escapeHtml(user.fabDate || joinOrDash(trace.fabricationDates))}</div>`;
+      html += `<div><strong>Monitor(a):</strong> ${escapeHtml(user.monitorName || user.monitor || joinOrDash(trace.monitors))}</div>`;
+      html += `<div><strong>Marca(s) do produto:</strong> ${escapeHtml(joinOrDash(trace.brands))}</div>`;
+      html += `<div><strong>Espécie(s):</strong> ${escapeHtml(joinOrDash(trace.species))}</div>`;
+      html += `<div><strong>Hash SHA-256:</strong> <span class="mono">${escapeHtml(shortHash)}</span></div>`;
+      html += `<div><strong>Origem:</strong> ${escapeHtml(sourceLabel)}</div>`;
+      html += `</div></header>`;
+
+      html += `<h2>Identificação e método</h2>`;
+      html += `<div class="section-grid">`;
+      html += `<div class="laudo-box">`;
+      html += `<p><strong>Objetivo:</strong> ${(report.laudo && report.laudo.objective) || 'Registrar e consolidar pesagens iniciais e finais.'}</p>`;
+      html += `<p><strong>Método:</strong> ${(report.laudo && report.laudo.method) || 'Pesagem inicial, cálculo do tempo previsto e pesagem final.'}</p>`;
+      html += `<p><strong>Escopo:</strong> consolidação das amostras, rastreabilidade operacional, cálculo do drip médio por lote e indicadores para avaliação comercial.</p>`;
+      html += `</div>`;
+      html += `<div class="laudo-box">`;
+      html += `<span class="audit-tag">Rastreabilidade ativa</span>`;
+      html += `<p><strong>Lote(s) analisado(s):</strong> ${escapeHtml(joinOrDash(trace.lots))}</p>`;
+      html += `<p><strong>Setor(es) da análise:</strong> ${escapeHtml(joinOrDash(trace.plants))}</p>`;
+      html += `<p><strong>Turno(s):</strong> ${escapeHtml(joinOrDash(trace.shifts))}</p>`;
+      html += `<p><strong>Espécie(s):</strong> ${escapeHtml(joinOrDash(trace.species))}</p>`;
+      html += `<p><strong>Monitor(es):</strong> ${escapeHtml(joinOrDash(trace.monitors))}</p>`;
+      html += `<p><strong>Data(s) de fabricação:</strong> ${escapeHtml(joinOrDash(trace.fabricationDates))}</p>`;
+      html += `</div>`;
+      html += `</div>`;
+
+      html += `<h2>Resumo executivo</h2>`;
+      html += `<div class="summary-grid">`;
+      html += `<div class="summary-card"><span class="summary-label">Amostras</span><span class="summary-value">${report.totals.initialRecords}</span></div>`;
+      html += `<div class="summary-card"><span class="summary-label">Finalizadas</span><span class="summary-value">${report.totals.finalizedRecords}</span></div>`;
+      html += `<div class="summary-card"><span class="summary-label">Perda total</span><span class="summary-value">${report.totals.totalLossAbs} g</span></div>`;
+      html += `<div class="summary-card"><span class="summary-label">Perda média</span><span class="summary-value">${report.totals.averageLossPct == null ? '-' : `${report.totals.averageLossPct} %`}</span></div>`;
+      html += `</div>`;
+
+      html += `<h2>Resultados consolidados</h2><ul>`;
+      html += `<li>Registros iniciais: ${report.totals.initialRecords}</li>`;
+      html += `<li>Registros finalizados: ${report.totals.finalizedRecords}</li>`;
+      html += `<li>Registros pendentes: ${report.totals.pendingRecords}</li>`;
+      html += `<li>Lotes únicos: ${report.totals.lots}</li>`;
+      html += `<li>Setores únicos: ${report.totals.plants || 0}</li>`;
+      html += `<li>Turnos únicos: ${report.totals.shifts || 0}</li>`;
+      html += `<li>Marcas únicas: ${report.totals.brands || 0}</li>`;
+      html += `<li>Tempo total: ${report.totals.totalTimeMin} min</li>`;
+      html += `<li>Peso bruto total: ${report.totals.totalGross} g</li>`;
+      html += `<li>Peso líquido inicial total: ${report.totals.totalNetInitial} g</li>`;
+      html += `<li>Peso líquido final total: ${report.totals.totalFinalNet} g</li>`;
+      html += `<li>Absorção total: ${report.totals.totalLossAbs} g</li>`;
+      html += `<li>Média de perda percentual final: ${report.totals.averageLossPct == null ? '-' : `${report.totals.averageLossPct} %`}</li>`;
+      html += `</ul>`;
+
+      html += `<h2>Rastreabilidade e auditoria</h2>`;
+      html += `<div class="laudo-box"><div class="audit-grid">`;
+      html += `<div><strong>Versão do store:</strong> ${escapeHtml(report.metadata && report.metadata.storeVersion ? report.metadata.storeVersion : '-')}</div>`;
+      html += `<div><strong>Hash SHA-256 do laudo:</strong> <span class="mono small hash-line">${escapeHtml(hash)}</span></div>`;
+      html += `<div><strong>Atualizado em:</strong> ${escapeHtml(formatDate(report.metadata && report.metadata.updatedAt))}</div>`;
+      html += `<div><strong>Primeiro cadastro:</strong> ${escapeHtml(formatDate(report.metadata && report.metadata.firstCreatedAt))}</div>`;
+      html += `<div><strong>Último cadastro:</strong> ${escapeHtml(formatDate(report.metadata && report.metadata.lastCreatedAt))}</div>`;
+      html += `<div><strong>Primeira finalização:</strong> ${escapeHtml(formatDate(report.metadata && report.metadata.firstFinalAt))}</div>`;
+      html += `<div><strong>Última finalização:</strong> ${escapeHtml(formatDate(report.metadata && report.metadata.lastFinalAt))}</div>`;
+      html += `<div><strong>Registros interpolados:</strong> ${escapeHtml(String(report.totals.interpolatedRecords || 0))}</div>`;
+      html += `<div><strong>Registros sem tempo calculado:</strong> ${escapeHtml(String(report.totals.recordsWithoutTime || 0))}</div>`;
+      html += `<div><strong>Avisos de mercado:</strong> ${escapeHtml(String(report.totals.marketWarnings || 0))}</div>`;
+      html += `</div></div>`;
+
+      html += `<h2>Resumo por lote</h2>`;
+      html += renderTable(
+        ['Lote', 'Registros', 'Drip médio', 'Sugestão', 'Status de auditoria'],
+        (report.lotSummaries || []).map((item) => [
+          escapeHtml(item.key),
+          escapeHtml(String(item.records)),
+          escapeHtml(item.averageGrossAbsPct == null ? '-' : `${formatPrecisePercent(item.averageGrossAbsPct)} %`),
+          escapeHtml(item.marketIndicator || '-'),
+          item.marketWarning ? '<span class="warning">Revisar lote</span>' : 'Sem alerta'
+        ]),
+        'table-audit'
+      );
+
+      html += `<h2>Conclusão</h2><div class="conclusion">${escapeHtml(conclusion)}</div>`;
+
+      html += `<h2 class="matrix-title">Matriz analítica de pesagens iniciais</h2>`;
+      html += renderTable(
+        ['#', 'ID', 'Espécie/Marca', 'Lote', 'Setor', 'Monitor', 'Bruto', 'Líquido', 'Tempo', 'Status'],
+        (report.initialRecords || []).map((rec, idx) => [
+          escapeHtml(String(idx + 1)),
+          `<span class="mono small">${escapeHtml(String(rec.id || '-').slice(0, 12))}</span>`,
+          escapeHtml(`${rec.species || '-'} / ${rec.productBrand || rec.species || '-'}`),
+          escapeHtml(rec.lote || '-'),
+          escapeHtml(rec.plantName || '-'),
+          escapeHtml(rec.monitor || '-'),
+          escapeHtml(formatWeight(rec.gross)),
+          escapeHtml(formatWeight(rec.net)),
+          escapeHtml(formatMinutes(rec.timeMin)),
+          escapeHtml(rec.status || '-')
+        ]),
+        'table-audit'
+      );
+
+      html += `<h2 class="matrix-follow">Matriz auditável de pesagens finalizadas</h2>`;
+      html += renderTable(
+        ['#', 'ID', 'Lote', 'Marca', 'Monitor', 'Bruto inicial', 'Bruto final', 'Líq. final', 'Drip %', 'Sugestão'],
+        (report.finalizedRecords || []).map((rec, idx) => [
+          escapeHtml(String(idx + 1)),
+          `<span class="mono small">${escapeHtml(String(rec.id || '-').slice(0, 12))}</span>`,
+          escapeHtml(rec.lote || '-'),
+          escapeHtml(rec.productBrand || rec.species || '-'),
+          escapeHtml(rec.monitor || '-'),
+          escapeHtml(formatWeight(rec.gross)),
+          escapeHtml(formatWeight(rec.finalGross)),
+          escapeHtml(formatWeight(rec.finalNet)),
+          escapeHtml(formatPercentCell(rec.grossAbsPct)),
+          escapeHtml(rec.marketIndicator || '-')
+        ]),
+        'table-audit'
+      );
+
+      html += `<h2 class="matrix-follow">Testes complementares de absorção</h2>`;
+      html += renderTable(
+        ['#', 'ID', 'Espécie/Marca', 'Lote', 'Base', 'Inicial', 'Final', 'Seco', 'Absorção', '%', 'Nota'],
+        (report.absorptionTests || []).map((test, idx) => [
+          escapeHtml(String(idx + 1)),
+          `<span class="mono small">${escapeHtml(String(test.id || '-').slice(0, 12))}</span>`,
+          escapeHtml(`${test.species || '-'} / ${test.productBrand || test.species || '-'}`),
+          escapeHtml(test.lote || '-'),
+          escapeHtml(test.baseType || '-'),
+          escapeHtml(test.initialWeight == null ? '-' : String(test.initialWeight)),
+          escapeHtml(test.finalWeight == null ? '-' : String(test.finalWeight)),
+          escapeHtml(test.dryWeight == null ? '-' : String(test.dryWeight)),
+          escapeHtml(test.absorption == null ? '-' : String(test.absorption)),
+          escapeHtml(formatPercentCell(test.absorptionPercent)),
+          escapeHtml(test.note || '-')
+        ]),
+        'table-audit'
+      );
+
+      html += `<footer>Documento gerado pelo DripTest. Número ${escapeHtml(reportNumber)}. Hash SHA-256 <span class="mono">${escapeHtml(shortHash)}</span>.</footer>`;
+      if (!(options && options.nativePdf)) {
+        html += `<script>window.onload=function(){setTimeout(()=>{window.print();},300);};<\/script>`;
+      }
+      html += `</body></html>`;
+      return html;
+    }
+
+    async function exportHtmlAsNativePdf(filename, html, options) {
+      const result = await DripData.saveHtmlAsPdf(filename, html, options || {});
+      setBackendStatus(result && result.path
+        ? `PDF salvo no celular: ${result.path}`
+        : 'PDF gerado no celular com sucesso.', 'ok');
+      return result;
+    }
+
+    async function exportReportAsNativePdf(filename, report, options) {
+      const result = await DripData.saveReportAsPdf(filename, report, options || {});
+      setBackendStatus(result && result.path
+        ? `Laudo PDF salvo no celular: ${result.path}`
+        : 'Laudo PDF gerado no celular com sucesso.', 'ok');
+      return result;
+    }
+
+    async function openPdfFromReport(report, options) {
+      const html = createPdfHtml(report, options);
+      lastGeneratedPdfHtml = html;
+      lastGeneratedDocumentSlug = 'driptest-laudo';
+      if (DripData.hasAndroidBridge()) {
+        await exportReportAsNativePdf('driptest-laudo', report, {
+          user: options && options.user ? options.user : {},
+          reportNumber: options && options.reportNumber ? options.reportNumber : '',
+          hash: options && options.hash ? options.hash : '',
+          sourceLabel: options && options.sourceLabel ? options.sourceLabel : '',
+          issuedAt: options && options.issuedAt ? options.issuedAt : '',
+          title: 'Laudo DripTest',
+          open: true,
+          text: options && options.shareText ? options.shareText : ''
+        });
+        return;
+      }
+      const win = window.open('', '_blank');
+      if (win) {
+        win.document.open();
+        win.document.write(html);
+        win.document.close();
+        return;
+      }
+
+      // Fallback para WebView mobile: mostra a prévia no próprio app sem depender de popup.
+      printPreviewFrame.srcdoc = html;
+      printPreviewModal.classList.add('show');
+      setBackendStatus('Prévia aberta no app. Se a impressão não abrir no celular, use "Baixar HTML".', 'warn');
+    }
+
+    function closePrintPreview() {
+      printPreviewModal.classList.remove('show');
+      printPreviewFrame.srcdoc = '';
+    }
+
+    function downloadHtmlPreview() {
+      if (!lastGeneratedPdfHtml) return;
+      const stamp = new Date().toISOString().slice(0, 19).replace(/[:T]/g, '-');
+      DripData.downloadTextFile(`${lastGeneratedDocumentSlug}-${stamp}.html`, lastGeneratedPdfHtml, 'text/html;charset=utf-8');
+    }
+
+    function formatKg(value) {
+      const num = Number(value);
+      if (!Number.isFinite(num)) return '';
+      return (num / 1000).toLocaleString('pt-BR', { minimumFractionDigits: 3, maximumFractionDigits: 3 });
+    }
+
+    function formatKgNumber(value) {
+      const num = Number(value);
+      if (!Number.isFinite(num)) return '';
+      return num.toLocaleString('pt-BR', { minimumFractionDigits: 3, maximumFractionDigits: 3 });
+    }
+
+    function formatSheetPercent(value) {
+      const num = Number(value);
+      if (!Number.isFinite(num)) return '';
+      return num.toLocaleString('pt-BR', { minimumFractionDigits: 3, maximumFractionDigits: 3 }) + '%';
+    }
+
+    function normalizeAnalysisBrand(value) {
+      const text = String(value || '').trim();
+      const normalized = normalizeText(text);
+      if (normalized.includes('nutriza')) return 'Nutriza';
+      if (normalized.includes('friato') || normalized.includes('ave')) return 'Friato';
+      return text || '-';
+    }
+
+    function getAnalysisSheetSample(record) {
+      const m0 = Number(record && record.gross) / 1000;
+      const m1 = Number(record && record.packGrams) / 1000;
+      const m2 = Number(record && record.finalNet) / 1000;
+      const m3 = Number(record && record.finalPackGrams) / 1000;
+      const hasM3 = Number.isFinite(m3) && m3 > 0;
+      const loss = Number.isFinite(m0) && Number.isFinite(m1) && Number.isFinite(m2) ? m0 - m1 - m2 : null;
+      const base = Number.isFinite(m0) && Number.isFinite(m1) && hasM3 ? m0 - m1 - m3 : null;
+      const percent = DripData.calculateOfficialDripPercent(record);
+
+      return {
+        record,
+        m0,
+        m1,
+        m2,
+        m3,
+        hasM3,
+        loss,
+        base,
+        percent,
+        anomaly: !Number.isFinite(m0) || !Number.isFinite(m1) || !Number.isFinite(m2) || !hasM3 || !Number.isFinite(percent)
+      };
+    }
+
+    function groupAnalysisSheetRecords(records) {
+      const groups = new Map();
+      records.forEach((record) => {
+        const key = [
+          record.lote || 'Sem lote',
+          record.shift || record.turno || 'Sem turno',
+          record.fabDate || 'Sem data',
+          record.productBrand || record.species || 'Sem marca'
+        ].join('||');
+        if (!groups.has(key)) {
+          groups.set(key, {
+            lote: record.lote || '-',
+            shift: record.shift || record.turno || '-',
+            fabDate: record.fabDate || '-',
+            productBrand: record.productBrand || record.species || '-',
+            records: []
+          });
+        }
+        groups.get(key).records.push(record);
+      });
+      return Array.from(groups.values()).map((group) => {
+        group.records.sort(compareAnalysisSheetRecords);
+        return group;
+      });
+    }
+
+    function compareAnalysisSheetRecords(a, b) {
+      const explicitA = getRecordSampleOrder(a);
+      const explicitB = getRecordSampleOrder(b);
+      if (explicitA != null || explicitB != null) {
+        return (explicitA == null ? Number.MAX_SAFE_INTEGER : explicitA) - (explicitB == null ? Number.MAX_SAFE_INTEGER : explicitB);
+      }
+
+      const netDiff = Number(b && b.net || 0) - Number(a && a.net || 0);
+      if (netDiff) return netDiff;
+
+      const grossDiff = Number(b && b.gross || 0) - Number(a && a.gross || 0);
+      if (grossDiff) return grossDiff;
+
+      return Number(a && a.createdAt || 0) - Number(b && b.createdAt || 0);
+    }
+
+    function getRecordSampleOrder(record) {
+      const candidates = [
+        record && record.sampleNumber,
+        record && record.sample_number,
+        record && record.sampleIndex,
+        record && record.sample_index,
+        record && record.order,
+        record && record.ordem
+      ];
+      for (const value of candidates) {
+        const num = Number(value);
+        if (Number.isFinite(num) && num > 0) return num;
+      }
+      return null;
+    }
+
+    function chunkRecords(records, size) {
+      const chunks = [];
+      for (let i = 0; i < records.length; i += size) {
+        chunks.push(records.slice(i, i + size));
+      }
+      return chunks.length ? chunks : [[]];
+    }
+
+    function createAnalysisSheetHtml(report, options) {
+      const user = options && options.user ? options.user : {};
+      const generatedAt = report.generatedAt || Date.now();
+      const finalized = (report.finalizedRecords || []).filter((record) => record.finalGross != null || record.finalNet != null);
+      const groups = groupAnalysisSheetRecords(finalized);
+      const blocks = [];
+
+      groups.forEach((group) => {
+        chunkRecords(group.records, 6).forEach((records) => {
+          blocks.push({ group, records });
+        });
+      });
+
+      const styles = `
+        <style>
+          @page{size:A4 landscape;margin:7mm}
+          *{box-sizing:border-box}
+          body{font-family:Arial,Helvetica,sans-serif;color:#172421;margin:0;font-size:8.4px;line-height:1.18;background:#fff}
+          .sheet{width:100%;page-break-after:always;border:1px solid #cddbd5;padding:5px;background:linear-gradient(180deg,#ffffff 0%,#fbfdfc 100%)}
+          .sheet:last-child{page-break-after:auto}
+          table{width:100%;border-collapse:collapse;table-layout:fixed}
+          td,th{border:1px solid #c9d7d2;padding:2.5px 3px;text-align:center;vertical-align:middle}
+          .top-card{border:1px solid #b9ccc5;background:#f6faf8}
+          .top-card td{border-color:#b9ccc5}
+          .brand-cell{background:#0f6b5f;color:#fff}
+          .logo{font-size:14px;font-weight:900;font-style:italic;line-height:1}
+          .brand-sub{display:block;margin-top:2px;font-size:7px;letter-spacing:.08em;text-transform:uppercase;color:#dcefe9}
+          .title{font-size:14px;font-weight:900;letter-spacing:.04em;color:#17302c;text-transform:uppercase}
+          .docmeta{text-align:left;font-weight:bold;line-height:1.35;color:#405550;background:#ffffff}
+          .meta{margin-top:5px;border:1px solid #c9d7d2}
+          .meta td{height:18px}
+          .label{font-weight:900;background:#edf6f2;color:#294a43;text-transform:uppercase;font-size:7.8px;letter-spacing:.03em}
+          .sample-wrap{padding:3px;border:1px solid #c9d7d2;background:#fff}
+          .sample-table{border-collapse:separate;border-spacing:0}
+          .sample-table td{height:17px;border-color:#d8e3df}
+          .sample-head{font-weight:900;background:#17302c;color:#fff;letter-spacing:.04em;text-transform:uppercase}
+          .m-label{width:45%;font-weight:900;background:#f2f7f5;color:#405550}
+          .value-cell{font-weight:700;background:#fff}
+          .formula{font-size:7.2px;line-height:1.08}
+          .anomaly{background:#ffe8ec!important;color:#9f1239;font-weight:900}
+          .summary{margin-top:7px;border:1px solid #b9ccc5}
+          .summary td{height:25px;font-weight:900}
+          .summary-value{font-size:10px;color:#0f6b5f;background:#f4fbf8}
+          .limit-box{font-size:7.7px;line-height:1.18;background:#fffaf0;color:#6f4800}
+          .small{font-size:7.3px;line-height:1.12}
+          .signature{height:38px;background:#fff}
+          .signature span{display:block;margin-top:21px;border-top:1px solid #51635f;padding-top:2px;color:#51635f;font-weight:700}
+          .legend{margin-top:7px}
+          .legend td{height:16px;text-align:left;background:#f8fbfa;color:#405550;border-color:#d8e3df}
+          .footer-note{text-align:right;margin-top:3px;color:#64736f;font-weight:700}
+          .no-border{border:0}
+        </style>`;
+
+      function sampleTable(record, index) {
+        const sample = record ? getAnalysisSheetSample(record) : null;
+        const values = sample ? [
+          ['M0', formatKg(sample.m0 * 1000)],
+          ['M1', formatKg(sample.m1 * 1000)],
+          ['M2', formatKg(sample.m2 * 1000)],
+          ['M3', sample.hasM3 ? formatKg(sample.m3 * 1000) : 'ANOMALIA'],
+          ['M0-M1-M2', formatKgNumber(sample.loss)],
+          ['M0-M1-M3', formatKgNumber(sample.base)],
+          ['% drip', sample.anomaly ? 'ANOMALIA' : formatSheetPercent(sample.percent)]
+        ] : [
+          ['M0', ''],
+          ['M1', ''],
+          ['M2', ''],
+          ['M3', ''],
+          ['M0-M1-M2', ''],
+          ['M0-M1-M3', ''],
+          ['% drip', '']
+        ];
+
+        const rows = values.map((row, rowIndex) => {
+          const isAnomaly = sample && sample.anomaly && (rowIndex === 3 || rowIndex === 6);
+          return `<tr><td class="m-label">${escapeHtml(row[0])}</td><td class="value-cell ${isAnomaly ? 'anomaly' : ''}">${escapeHtml(row[1])}</td></tr>`;
+        }).join('');
+
+        return `<td colspan="3" class="sample-wrap">
+          <table class="sample-table">
+            <tr><td colspan="3" class="sample-head">Amostra ${String(index + 1).padStart(2, '0')}</td></tr>
+            ${rows}
+          </table>
+        </td>`;
+      }
+
+      function renderBlock(block, blockIndex) {
+        const group = block.group || {};
+        const records = block.records || [];
+        const samples = Array.from({ length: 6 }, (_, idx) => records[idx] || null);
+        const sampleData = samples.map((record) => record ? getAnalysisSheetSample(record) : null);
+        const validPercents = sampleData
+          .map((sample) => sample && !sample.anomaly ? sample.percent : null)
+          .filter((value) => Number.isFinite(value));
+        const finalAveragePercents = samples
+          .map((record) => record ? Number(record.lossPct) : null)
+          .filter((value) => Number.isFinite(value));
+        const dripAverage = finalAveragePercents.length === 6
+          ? finalAveragePercents.reduce((sum, value) => sum + value, 0) / 6
+          : null;
+        const hasAnomaly = sampleData.some((sample) => sample && sample.anomaly) || validPercents.length !== 6;
+        const brand = normalizeAnalysisBrand(group.productBrand || user.productBrand || '-');
+
+        return `<section class="sheet">
+          <table class="header top-card">
+            <tr>
+              <td colspan="3" class="brand-cell"><span class="logo">Friato</span><span class="brand-sub">Alimentos</span></td>
+              <td colspan="11" class="title">PLANILHA DE ANALISE DE DRIP TEST</td>
+              <td colspan="4" class="docmeta">Codigo: PAC-QUA-017-PL 01<br>Revisao: 015<br>Data da Revisao: 11/08/2025</td>
+            </tr>
+          </table>
+          <table class="meta">
+            <tr>
+              <td colspan="2" class="label">Turno</td>
+              <td colspan="2">${escapeHtml(group.shift || user.shift || user.turno || '-')}</td>
+              <td colspan="3" class="label">Data de Producao</td>
+              <td colspan="2">${escapeHtml(formatDateOnly(group.fabDate || user.fabDate))}</td>
+              <td colspan="2" class="label">Lote</td>
+              <td colspan="2">${escapeHtml(group.lote || user.lot || '-')}</td>
+              <td colspan="3" class="label">Data da analise</td>
+              <td colspan="2">${escapeHtml(formatDateOnly(generatedAt))}</td>
+            </tr>
+            <tr>
+              <td colspan="2" class="label">Marca</td>
+              <td colspan="16">${escapeHtml(brand)}</td>
+            </tr>
+          </table>
+          <table style="margin-top:3px">
+            <tr>${samples.map((record, idx) => sampleTable(record, idx)).join('')}</tr>
+          </table>
+          <table class="summary">
+            <tr>
+              <td colspan="3" class="no-border"></td>
+              <td colspan="3" class="label">DRIP MEDIO</td>
+              <td colspan="2" class="summary-value">${dripAverage == null ? (hasAnomaly ? 'ANOMALIA' : '') : formatSheetPercent(dripAverage)}</td>
+              <td colspan="1" class="no-border"></td>
+              <td colspan="3" class="label">VALOR MAXIMO</td>
+              <td colspan="4" class="limit-box">MI: 6%<br>ME UE: 5,1%<br>ME Russia: 4%</td>
+              <td colspan="2" class="signature"><span>Ass. Monitor GQ</span></td>
+            </tr>
+          </table>
+          <table class="legend">
+            <tr><td colspan="18"><strong>Legenda:</strong> MI: Mercado Interno &nbsp;&nbsp;&nbsp; ME: Mercado Externo &nbsp;&nbsp;&nbsp; UE: Uniao Europeia ${hasAnomaly ? '&nbsp;&nbsp;&nbsp; <strong>ANOMALIA:</strong> amostra incompleta ou M3 ausente.' : ''}</td></tr>
+          </table>
+          <div class="small footer-note">Bloco ${blockIndex + 1} gerado pelo DripTest App</div>
+        </section>`;
+      }
+
+      const htmlBlocks = blocks.length
+        ? blocks.map(renderBlock).join('')
+        : `<section class="sheet"><p>Nenhuma amostra finalizada disponivel para gerar a planilha de analise.</p></section>`;
+
+      const autoPrint = !(options && options.nativePdf);
+      return `<!doctype html><html><head><meta charset="utf-8"><title>Planilha de Analise de Drip Test</title>${styles}</head><body>${htmlBlocks}${autoPrint ? '<script>window.onload=function(){setTimeout(()=>{window.print();},300);};<\/script>' : ''}</body></html>`;
+    }
+
+    async function openAnalysisSheetFromReport(report, options) {
+      const html = createAnalysisSheetHtml(report, options || {});
+      lastGeneratedPdfHtml = html;
+      lastGeneratedDocumentSlug = 'planilha-analise-driptest';
+      if (DripData.hasAndroidBridge()) {
+        await exportHtmlAsNativePdf('planilha-analise-driptest', html, {
+          title: 'Planilha de analise DripTest',
+          open: true
+        });
+        return;
+      }
+      const win = window.open('', '_blank');
+      if (win) {
+        win.document.open();
+        win.document.write(html);
+        win.document.close();
+        return;
+      }
+      printPreviewFrame.srcdoc = html;
+      printPreviewModal.classList.add('show');
+      setBackendStatus('Previa da planilha aberta no app. Use Imprimir para salvar como PDF.', 'warn');
+    }
+
+    function render() {
+      const report = getCurrentReport();
+
+      initialCountEl.textContent = String(report.totals.initialRecords);
+      finalizedCountEl.textContent = String(report.totals.finalizedRecords);
+      lotCountEl.textContent = String(report.totals.lots);
+      averageTimeEl.textContent = report.totals.averageTimeMin == null ? '-' : `${formatNumber(report.totals.averageTimeMin)} min`;
+      totalTimeEl.textContent = `${report.totals.totalTimeMin} min`;
+      totalGrossEl.textContent = `${formatNumber(report.totals.totalGross)} g`;
+      totalNetEl.textContent = `${formatNumber(report.totals.totalNetInitial)} g`;
+      totalLossEl.textContent = `${formatNumber(report.totals.totalLossAbs)} g`;
+      reportPreview.textContent = DripData.buildReportText();
+
+      recordList.replaceChildren();
+      if (!report.initialRecords.length) {
+        const empty = document.createElement('div');
+        empty.className = 'list-item';
+        empty.textContent = 'Nenhuma pesagem encontrada para emitir laudo.';
+        recordList.appendChild(empty);
+      } else {
+        report.initialRecords.slice(-8).reverse().forEach((record) => {
+          const item = document.createElement('div');
+          item.className = 'list-item';
+          const title = document.createElement('strong');
+          title.textContent = record.productBrand || record.species;
+          const weightLine = document.createElement('div');
+          weightLine.textContent = `Marca ${record.productBrand || record.species || '-'} | Lote ${record.lote || '-'} | Setor ${record.plantName || '-'} | Turno ${record.shift || record.turno || '-'} | Monitor(a) ${record.monitor || '-'} | Fabricação ${record.fabDate || '-'} | Bruto ${formatNumber(record.gross)} g | Líquido ${formatNumber(record.net)} g`;
+          const statusLine = document.createElement('div');
+          statusLine.textContent = `Status ${record.status} | Tempo previsto ${record.timeMin == null ? '-' : `${record.timeMin} min`} | Cadastro ${formatDate(record.createdAt)}`;
+          item.append(title, weightLine, statusLine);
+          recordList.appendChild(item);
+        });
+      }
+
+      const lotSummaryEl = document.getElementById('lotSummary');
+      lotSummaryEl.replaceChildren();
+      if (!report.lotSummaries || !report.lotSummaries.length) {
+        const emptyLot = document.createElement('div');
+        emptyLot.className = 'list-item';
+        emptyLot.textContent = 'Nenhum lote com registros finalizados.';
+        lotSummaryEl.appendChild(emptyLot);
+      } else {
+        report.lotSummaries.forEach((lotSummary) => {
+          const item = document.createElement('div');
+          item.className = 'list-item';
+          const title = document.createElement('strong');
+          title.textContent = `Lote ${lotSummary.key}`;
+          const body = document.createElement('div');
+          const avgText = lotSummary.averageGrossAbsPct == null ? '-' : `${formatPrecisePercent(lotSummary.averageGrossAbsPct)} %`;
+          body.textContent = `Registros: ${lotSummary.records} | Drip medio: ${avgText} | Sugestao: ${lotSummary.marketIndicator || '-'}`;
+          if (lotSummary.marketWarning) body.style.color = 'var(--warning)';
+          item.append(title, body);
+          lotSummaryEl.appendChild(item);
+        });
+      }
+
+      const scope = getCurrentScope(report);
+      if (!DripApi.isEnabled()) {
+        setBackendStatus('Modo local ativo. Configure a API para sincronizar os dados e emitir o laudo oficial no banco central.', 'warn');
+      } else if (!scope.lotCode) {
+        setBackendStatus('API ativa. Defina lote e data de fabricacao no cadastro inicial para emitir o laudo oficial com rastreabilidade.', 'warn');
+      } else if ((report.lotSummaries || []).length > 1) {
+        setBackendStatus(`API ativa. A prévia local contém ${report.lotSummaries.length} lotes; a emissão oficial usará o lote atual ${scope.lotCode}.`, 'warn');
+      } else {
+        setBackendStatus(`API ativa. Laudo pronto para sincronizar e emitir oficialmente para o lote ${scope.lotCode}.`, 'ok');
+      }
+    }
+
+    refreshBtn.addEventListener('click', async () => {
+      render();
+      await loadOfficialReports();
+    });
+
+    syncBankBtn.addEventListener('click', async () => {
+      try {
+        await syncDataToBackend();
+        await loadOfficialReports();
+      } catch (error) {
+        console.error(error);
+        setBackendStatus(`Falha ao sincronizar os dados com o banco: ${error && error.message ? error.message : String(error)}`, 'error');
+      }
+    });
+
+    issueOfficialBtn.addEventListener('click', async () => {
+      try {
+        await emitOfficialReport();
+      } catch (error) {
+        console.error(error);
+        setBackendStatus(`Falha ao emitir o laudo oficial: ${error && error.message ? error.message : String(error)}`, 'error');
+      }
+    });
+
+    copyBtn.addEventListener('click', () => {
+      const text = DripData.buildReportText();
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(text).then(() => {
+          alert('Laudo copiado para a area de transferencia.');
+        }).catch(() => {
+          prompt('Laudo (copie manualmente):', text);
+        });
+        return;
+      }
+      prompt('Laudo (copie manualmente):', text);
+    });
+
+    shareWhatsappBtn.addEventListener('click', async () => {
+      const text = DripData.buildWhatsappReportText();
+      if (DripData.hasAndroidBridge()) {
+        try {
+          const localReport = JSON.parse(DripData.buildReportJson());
+          const localHash = await DripData.computeTextSha256(JSON.stringify(localReport));
+          const reportOptions = {
+            user: getUserConfig(),
+            reportNumber: buildReportNumber(localReport, localHash),
+            hash: localHash,
+            sourceLabel: `App Web DripTest | store ${DripData.STORE_VERSION || '-'}`,
+            issuedAt: localReport.generatedAt,
+            nativePdf: true,
+            shareText: text
+          };
+          lastGeneratedPdfHtml = createPdfHtml(localReport, reportOptions);
+          lastGeneratedDocumentSlug = 'driptest-laudo-whatsapp';
+          await exportReportAsNativePdf('driptest-laudo-whatsapp', localReport, {
+            user: reportOptions.user,
+            reportNumber: reportOptions.reportNumber,
+            hash: reportOptions.hash,
+            sourceLabel: reportOptions.sourceLabel,
+            issuedAt: reportOptions.issuedAt,
+            title: 'Laudo DripTest',
+            share: true,
+            text
+          });
+          return;
+        } catch (error) {
+          console.error(error);
+        }
+      }
+      if (navigator.share) {
+        try {
+          await navigator.share({ title: 'Laudo DripTest', text });
+          return;
+        } catch (error) {
+          if (error && error.name === 'AbortError') return;
+        }
+      }
+
+      const url = `https://wa.me/?text=${encodeURIComponent(text)}`;
+      window.open(url, '_blank', 'noopener,noreferrer');
+    });
+
+    excelBtn.addEventListener('click', () => {
+      DripData.downloadTextFile('driptest-relatorio-excel.csv', DripData.buildReportCsv(), 'text/csv;charset=utf-8');
+    });
+
+    analysisSheetBtn.addEventListener('click', async () => {
+      try {
+        const localReport = JSON.parse(DripData.buildReportJson());
+        await openAnalysisSheetFromReport(localReport, {
+          user: getUserConfig(),
+          nativePdf: DripData.hasAndroidBridge()
+        });
+      } catch (error) {
+        console.error(error);
+        alert('Erro ao gerar planilha de analise: ' + (error && error.message ? error.message : String(error)));
+      }
+    });
+
+    pdfBtn.addEventListener('click', async () => {
+      try {
+        const localReport = JSON.parse(DripData.buildReportJson());
+        const localHash = await DripData.computeTextSha256(JSON.stringify(localReport));
+        let officialRow = lastOfficialReport;
+
+        if (DripApi.isEnabled()) {
+          try {
+            officialRow = await emitOfficialReport();
+          } catch (error) {
+            console.warn('Falha na emissão oficial antes do PDF, seguindo com laudo local.', error);
+            setBackendStatus('Não foi possível emitir no banco antes do PDF. O documento será gerado com a versão local atual.', 'warn');
+          }
+        }
+
+        const report = officialRow && officialRow.report_json ? officialRow.report_json : localReport;
+        await openPdfFromReport(report, {
+          user: getUserConfig(),
+          reportNumber: officialRow && officialRow.report_number ? officialRow.report_number : buildReportNumber(localReport, localHash),
+          hash: officialRow && officialRow.sha256_hash ? officialRow.sha256_hash : localHash,
+          sourceLabel: officialRow ? 'Banco central DripTest' : `App Web DripTest | store ${DripData.STORE_VERSION || '-'}`,
+          issuedAt: officialRow && officialRow.issued_at ? officialRow.issued_at : localReport.generatedAt,
+          nativePdf: DripData.hasAndroidBridge(),
+          shareText: DripData.buildWhatsappReportText()
+        });
+      } catch (error) {
+        console.error(error);
+        alert('Erro ao gerar relatorio completo: ' + (error && error.message ? error.message : String(error)));
+      }
+    });
+
+    printPreviewPrintBtn.addEventListener('click', () => {
+      try {
+        if (printPreviewFrame && printPreviewFrame.contentWindow) {
+          printPreviewFrame.contentWindow.focus();
+          printPreviewFrame.contentWindow.print();
+          return;
+        }
+      } catch (error) {
+        console.warn('Falha ao imprimir a prévia no frame', error);
+      }
+      alert('A impressão não abriu neste dispositivo. Use "Baixar HTML" e gere o PDF no navegador/PC.');
+    });
+
+    printPreviewHtmlBtn.addEventListener('click', () => {
+      downloadHtmlPreview();
+    });
+
+    printPreviewCloseBtn.addEventListener('click', () => {
+      closePrintPreview();
+    });
+
+    printPreviewModal.addEventListener('click', (event) => {
+      if (event.target === printPreviewModal) {
+        closePrintPreview();
+      }
+    });
+
+    importBtn.addEventListener('click', () => {
+      importInput.click();
+    });
+
+    importInput.addEventListener('change', async () => {
+      const file = importInput.files && importInput.files[0];
+      if (!file) return;
+      const text = await file.text();
+      const result = DripData.importInitialRecordsFromCsv(text);
+      alert(`Importacao concluida. Importados: ${result.imported}. Ignorados: ${result.skipped}.`);
+      importInput.value = '';
+      render();
+    });
+
+    render();
+    loadOfficialReports();
+  </script>
+</body>
+</html>

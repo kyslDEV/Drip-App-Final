@@ -1,0 +1,61 @@
+plugins {
+    id "com.android.application"
+}
+
+def resolveDesktopTestOutputDir() {
+    def home = System.getProperty("user.home")
+    def candidates = [
+        new File(home, "OneDrive/Desktop/TestesDT_APP"),
+        new File(home, "Desktop/TestesDT_APP")
+    ]
+    return candidates.find { it.parentFile.exists() } ?: candidates[0]
+}
+
+def resolveDebugApkFile() {
+    def candidates = [
+        layout.buildDirectory.file("outputs/apk/debug/app-debug.apk").get().asFile,
+        layout.buildDirectory.file("intermediates/apk/debug/app-debug.apk").get().asFile
+    ]
+    return candidates.find { it.exists() }
+}
+
+android {
+    namespace = "com.driptest.offline"
+    compileSdk = 36
+
+    defaultConfig {
+        applicationId = "com.driptest.offline"
+        minSdk = 23
+        targetSdk = 36
+        versionCode = 6
+        versionName = "1.5"
+    }
+
+    compileOptions {
+        sourceCompatibility = JavaVersion.VERSION_11
+        targetCompatibility = JavaVersion.VERSION_11
+    }
+}
+
+dependencies {
+    implementation "androidx.core:core:1.15.0"
+}
+
+tasks.register("copyDebugApkToDesktop", Copy) {
+    dependsOn("assembleDebug")
+    from {
+        def apk = resolveDebugApkFile()
+        if (apk == null) {
+            throw new GradleException("APK debug nao encontrado para copiar para TestesDT_APP.")
+        }
+        apk
+    }
+    into(resolveDesktopTestOutputDir())
+    rename { "DripTest-mobile-debug.apk" }
+}
+
+afterEvaluate {
+    tasks.named("assembleDebug").configure {
+        finalizedBy(tasks.named("copyDebugApkToDesktop"))
+    }
+}

@@ -1,0 +1,131 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="theme-color" content="#1663d8" />
+  <meta name="description" content="DripTest - módulo de absorção temporariamente em revisão" />
+  <link rel="manifest" href="manifest.webmanifest" />
+  <link rel="icon" href="icons/icon.svg" type="image/svg+xml" />
+  <link rel="stylesheet" href="drip-theme.css?v=ui-2026-3" />
+  <title>DripTest - Absorção em Revisão</title>
+  <style>
+    :root {
+      --bg: #eef3f8;
+      --surface: #ffffff;
+      --surface-2: #f8fbff;
+      --text: #172033;
+      --muted: #667085;
+      --line: #dbe6f2;
+      --accent: #1663d8;
+      --accent-strong: #0f4eb0;
+      --shadow: 0 10px 26px rgba(32, 47, 72, 0.09);
+      --radius: 10px;
+      font-family: Inter, system-ui, -apple-system, "Segoe UI", Roboto, Arial, sans-serif;
+    }
+
+    * { box-sizing: border-box; }
+    body {
+      min-height: 100vh;
+      margin: 0;
+      color: var(--text);
+      background: linear-gradient(180deg, rgba(255,255,255,0.82), rgba(238,243,248,0.96) 48%, #ffffff 100%);
+    }
+
+    button, a { font: inherit; }
+    .page { width: min(100% - 24px, 980px); margin: 0 auto; padding: 20px 0; }
+    .topbar, .panel {
+      background: var(--surface);
+      border: 1px solid rgba(219, 230, 242, 0.76);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+    }
+
+    .topbar {
+      display: grid;
+      grid-template-columns: auto 1fr auto;
+      align-items: center;
+      gap: 16px;
+      padding: 14px 16px;
+      margin-bottom: 12px;
+    }
+
+    .logo {
+      width: 50px;
+      height: 50px;
+      border-radius: 12px;
+      background: linear-gradient(135deg, var(--accent), #0bb5d8);
+      display: grid;
+      place-items: center;
+      color: #fff;
+      font-size: 18px;
+      font-weight: 800;
+      box-shadow: 0 10px 20px rgba(22, 99, 216, 0.18);
+    }
+
+    h1 { margin: 0; font-size: 21px; }
+    .subtitle { margin: 4px 0 0; color: var(--muted); font-size: 14px; }
+    .header-actions, .maintenance-actions { display: flex; align-items: center; gap: 10px; justify-content: flex-end; flex-wrap: wrap; }
+    .panel { padding: 18px; }
+    .button-link {
+      min-height: 40px;
+      border-radius: 8px;
+      border: 1px solid rgba(22, 99, 216, 0.22);
+      padding: 0 12px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      cursor: pointer;
+      text-decoration: none;
+      font-weight: 700;
+      white-space: nowrap;
+      color: var(--accent);
+      background: #fff;
+    }
+
+    .primary {
+      color: #fff;
+      background: var(--accent);
+      border-color: transparent;
+    }
+
+    @media (max-width: 840px) {
+      .topbar { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+  <div class="page">
+    <header class="topbar" role="banner" aria-label="Cabeçalho DripTest">
+      <div class="logo" aria-hidden="true">DT</div>
+      <div>
+        <h1>Absorção</h1>
+        <p class="subtitle">Módulo temporariamente desativado enquanto a regra de cálculo é revisada.</p>
+      </div>
+      <div class="header-actions">
+        <a href="DripTeste.html" class="button-link">Pesagem inicial</a>
+        <a href="DripTestF.html" class="button-link">Pesagem final</a>
+        <a href="DripSchedule.html" class="button-link">Agendamento</a>
+        <a href="DripReports.html" class="button-link">Relatórios</a>
+        <a href="DripSettings.html" class="button-link">Banco</a>
+      </div>
+    </header>
+
+    <main class="panel" role="main" aria-labelledby="maintenanceTitle">
+      <section class="maintenance-card">
+        <h2 id="maintenanceTitle">Absorção em revisão</h2>
+        <p>O cálculo de absorção foi pausado por agora para evitar registrar números com uma regra ainda em aberto.</p>
+        <p>Assim que você fechar os critérios de negócio, essa tela pode voltar como módulo completo com fórmulas, histórico, auditoria e impacto direto nos relatórios.</p>
+        <p>Enquanto isso, o fluxo principal segue em `pesagem inicial`, `pesagem final`, `agendamento` e `relatórios`.</p>
+        <div class="maintenance-actions">
+          <a href="DripReports.html" class="button-link primary">Ir para relatórios</a>
+          <a href="DripTeste.html" class="button-link">Voltar para pesagem inicial</a>
+        </div>
+      </section>
+    </main>
+  </div>
+
+  <script src="drip-ui.js?v=ui-2026-3"></script>
+</body>
+</html>

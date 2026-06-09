@@ -1,0 +1,6 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-label="DripTest">
+  <rect width="512" height="512" rx="112" fill="#1663d8"/>
+  <path d="M256 72c58 72 116 139 116 231 0 76-51 137-116 137s-116-61-116-137c0-92 58-159 116-231z" fill="#ffffff" opacity=".96"/>
+  <path d="M216 208h43c62 0 103 36 103 91s-41 91-103 91h-43V208zm43 132c29 0 48-16 48-41s-19-41-48-41h-2v82h2z" fill="#1663d8"/>
+  <path d="M150 208h58v50h-58v-50zm0 66h58v116h-58V274z" fill="#1663d8"/>
+</svg>
