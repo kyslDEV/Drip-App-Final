@@ -1,0 +1,1219 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="theme-color" content="#0f3d3e" />
+  <meta name="description" content="DripTest - central corporativa de supervisao." />
+  <link rel="manifest" href="manifest.webmanifest" />
+  <link rel="icon" href="icons/icon.svg" type="image/svg+xml" />
+  <link rel="stylesheet" href="drip-theme.css?v=ui-2026-4" />
+  <title>DripTest - Supervisor</title>
+  <style>
+    :root {
+      --ink: #142421;
+      --muted: #64736f;
+      --line: #d8e3df;
+      --paper: #ffffff;
+      --paper-soft: #f7faf8;
+      --green: #0f6b5f;
+      --green-strong: #084c43;
+      --amber: #b86b00;
+      --red: #b42335;
+      --blue: #185ca8;
+      --slate: #263a44;
+      --radius: 10px;
+      --shadow: 0 18px 44px rgba(18, 36, 33, 0.11);
+      font-family: Inter, system-ui, -apple-system, "Segoe UI", Roboto, Arial, sans-serif;
+    }
+
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      color: var(--ink);
+      background:
+        radial-gradient(circle at top left, rgba(15, 107, 95, 0.16), transparent 30%),
+        linear-gradient(135deg, #f4f8f2 0%, #edf5f4 48%, #f8f4ea 100%);
+    }
+    button, input, select, a { font: inherit; }
+    a { color: inherit; }
+
+    .layout {
+      display: grid;
+      grid-template-columns: 250px 1fr;
+      min-height: 100vh;
+    }
+    .sidebar {
+      padding: 18px 14px;
+      color: #e8f4f0;
+      background: linear-gradient(180deg, #0d302d, #112a32);
+      border-right: 1px solid rgba(255, 255, 255, 0.08);
+    }
+    .brand { display: flex; align-items: center; gap: 10px; margin-bottom: 18px; }
+    .brand-badge {
+      width: 38px;
+      height: 38px;
+      display: grid;
+      place-items: center;
+      border-radius: 10px;
+      color: #fff;
+      background: conic-gradient(from 160deg, #0f6b5f, #23a084, #f0b24f, #0f6b5f);
+      font-weight: 900;
+    }
+    .brand-title { margin: 0; font-size: 14px; font-weight: 900; }
+    .brand-sub { margin: 2px 0 0; color: #adc9c4; font-size: 12px; }
+    .nav { display: grid; gap: 8px; }
+    .nav a {
+      min-height: 40px;
+      display: flex;
+      align-items: center;
+      padding: 9px 10px;
+      border: 1px solid rgba(255, 255, 255, 0.12);
+      border-radius: 10px;
+      color: #e8f4f0;
+      text-decoration: none;
+      font-weight: 800;
+    }
+    .nav a:hover, .nav a.active { background: rgba(255, 255, 255, 0.09); }
+
+    .main {
+      width: min(100%, 1480px);
+      margin: 0 auto;
+      padding: 16px;
+    }
+    .panel {
+      border: 1px solid rgba(141, 160, 153, 0.28);
+      border-radius: var(--radius);
+      background: rgba(255, 255, 255, 0.84);
+      box-shadow: var(--shadow);
+      backdrop-filter: blur(14px) saturate(130%);
+    }
+    .topbar {
+      display: grid;
+      grid-template-columns: 1fr auto;
+      gap: 14px;
+      align-items: center;
+      padding: 18px;
+      margin-bottom: 14px;
+    }
+    h1, h2, h3, p { margin: 0; }
+    h1 { font-size: clamp(24px, 4vw, 42px); line-height: 1; color: #14302d; }
+    .eyebrow {
+      color: var(--green);
+      font-size: 11px;
+      font-weight: 900;
+      letter-spacing: .14em;
+      text-transform: uppercase;
+    }
+    .subtitle { margin-top: 8px; color: var(--muted); line-height: 1.45; }
+    .actions, .filters, .chips, .pager { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+    .btn {
+      min-height: 36px;
+      padding: 0 12px;
+      border: 1px solid transparent;
+      border-radius: 9px;
+      background: #fff;
+      color: var(--green);
+      cursor: pointer;
+      font-weight: 900;
+    }
+    .btn-primary { background: var(--green); color: #fff; }
+    .btn-primary:hover { background: var(--green-strong); }
+    .btn-ghost { border-color: rgba(15, 107, 95, 0.25); }
+    .btn-danger { border-color: rgba(180, 35, 53, 0.22); color: var(--red); }
+    .filters-panel { padding: 12px; margin-bottom: 14px; display: grid; gap: 10px; }
+    .chip {
+      min-height: 34px;
+      padding: 0 12px;
+      border: 1px solid var(--line);
+      border-radius: 999px;
+      background: #fff;
+      color: #344b47;
+      cursor: pointer;
+      font-weight: 800;
+    }
+    .chip.active { border-color: rgba(15, 107, 95, 0.45); background: #e8f5f1; color: var(--green-strong); }
+    .filters input, .filters select {
+      min-height: 36px;
+      min-width: 160px;
+      padding: 0 10px;
+      border: 1px solid var(--line);
+      border-radius: 9px;
+      background: #fff;
+      color: var(--ink);
+    }
+    .status-strip {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: 10px;
+      margin-bottom: 14px;
+    }
+    .status-card {
+      min-height: 92px;
+      padding: 13px;
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      background: linear-gradient(180deg, #fff, var(--paper-soft));
+    }
+    .status-card span {
+      color: var(--muted);
+      font-size: 11px;
+      font-weight: 900;
+      text-transform: uppercase;
+      letter-spacing: .05em;
+    }
+    .status-card b { display: block; margin-top: 8px; font-size: 28px; line-height: 1; }
+    .status-card small { display: block; margin-top: 8px; color: var(--muted); line-height: 1.35; }
+    .command-grid {
+      display: grid;
+      grid-template-columns: minmax(0, 1.15fr) minmax(340px, .85fr);
+      gap: 14px;
+      align-items: start;
+    }
+    .block {
+      padding: 14px;
+      display: grid;
+      gap: 10px;
+    }
+    .block-head {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 10px;
+    }
+    .block h2 { color: #14302d; font-size: 18px; }
+    .block p { color: var(--muted); font-size: 13px; line-height: 1.4; }
+    .stack { display: grid; gap: 14px; }
+    .review-list, .lot-list, .send-list { display: grid; gap: 8px; }
+    .review-item, .lot-card, .send-item {
+      padding: 10px;
+      border: 1px solid var(--line);
+      border-radius: 10px;
+      background: #fff;
+    }
+    .review-item strong, .lot-card strong, .send-item strong { display: block; margin-bottom: 4px; }
+    .review-item small, .lot-card small, .send-item small { color: var(--muted); line-height: 1.35; }
+    .lot-card {
+      cursor: pointer;
+      text-align: left;
+    }
+    .lot-card.active {
+      border-color: rgba(15, 107, 95, 0.42);
+      background: #edf8f5;
+    }
+    .lot-detail {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 8px;
+    }
+    .detail-tile {
+      padding: 9px;
+      border: 1px solid #e2ebe8;
+      border-radius: 9px;
+      background: #fbfdfc;
+    }
+    .detail-tile b { display: block; color: #41524f; font-size: 11px; text-transform: uppercase; }
+    .detail-tile span { display: block; margin-top: 4px; font-weight: 800; }
+    table { width: 100%; border-collapse: collapse; background: #fff; }
+    th, td { padding: 9px 8px; border-bottom: 1px solid #e7eeeb; text-align: left; vertical-align: top; font-size: 13px; }
+    th {
+      position: sticky;
+      top: 0;
+      z-index: 1;
+      background: #f1f7f5;
+      color: #435955;
+      font-size: 11px;
+      text-transform: uppercase;
+      letter-spacing: .04em;
+      cursor: pointer;
+    }
+    .table-wrap {
+      max-height: 410px;
+      overflow: auto;
+      border: 1px solid var(--line);
+      border-radius: 10px;
+      background: #fff;
+    }
+    .short-table { max-height: 285px; }
+    .tag {
+      min-height: 22px;
+      display: inline-flex;
+      align-items: center;
+      padding: 0 8px;
+      border-radius: 999px;
+      font-size: 11px;
+      font-weight: 900;
+      white-space: nowrap;
+    }
+    .tag-ok { color: #15683d; background: #e7f7ee; }
+    .tag-warn { color: #845200; background: #fff3d8; }
+    .tag-run { color: #155ca2; background: #e6f1ff; }
+    .tag-error { color: #982333; background: #ffebef; }
+    .tag-neutral { color: #42545f; background: #eef2f4; }
+    .row-change { background: #fff5f7; }
+    .row-change td:first-child { border-left: 3px solid var(--red); }
+    .muted { color: var(--muted); }
+    .right { text-align: right; }
+    .hidden { display: none; }
+    .mini-actions { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 8px; }
+    .mini-actions .btn { min-height: 30px; padding: 0 9px; font-size: 12px; }
+    .modal {
+      position: fixed;
+      inset: 0;
+      z-index: 80;
+      display: none;
+      align-items: center;
+      justify-content: center;
+      padding: 12px;
+      background: rgba(14, 31, 34, 0.48);
+    }
+    .modal.show { display: flex; }
+    .modal-card {
+      width: min(100%, 820px);
+      max-height: calc(100vh - 24px);
+      overflow: auto;
+      padding: 14px;
+      border: 1px solid var(--line);
+      border-radius: 12px;
+      background: #fff;
+      box-shadow: var(--shadow);
+    }
+    .modal-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
+    .modal-grid div { padding: 9px; border: 1px solid #e4ece9; border-radius: 9px; background: #fbfdfc; }
+    .modal-grid b { display: block; margin-bottom: 4px; color: #465c58; font-size: 11px; text-transform: uppercase; }
+    .flow-steps { display: grid; gap: 7px; margin: 0; padding: 0; list-style: none; }
+    .flow-step {
+      display: grid;
+      grid-template-columns: 24px 1fr auto;
+      gap: 8px;
+      align-items: center;
+      padding: 8px 9px;
+      border: 1px solid #e3ece8;
+      border-radius: 9px;
+      background: #fbfdfc;
+      font-size: 12px;
+    }
+    .flow-step-dot { width: 14px; height: 14px; border: 2px solid #8aa39d; border-radius: 999px; background: #fff; }
+    .flow-step.done .flow-step-dot { border-color: var(--green); background: var(--green); }
+    .flow-step.current .flow-step-dot { border-color: var(--blue); background: var(--blue); }
+    .flow-step-status { color: var(--muted); font-size: 11px; font-weight: 900; text-transform: uppercase; }
+    .flow-note {
+      margin: 8px 0;
+      padding: 9px;
+      border: 1px dashed #b6cbc5;
+      border-radius: 9px;
+      color: #31514c;
+      background: #f1f8f6;
+      font-size: 12px;
+    }
+    @media (max-width: 1120px) {
+      .layout { grid-template-columns: 1fr; }
+      .sidebar { position: static; }
+      .command-grid, .topbar { grid-template-columns: 1fr; }
+      .status-strip { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    }
+    @media (max-width: 720px) {
+      .main { padding: 10px; }
+      .status-strip, .lot-detail, .modal-grid { grid-template-columns: 1fr; }
+      .filters input, .filters select { width: 100%; min-width: 0; }
+      .actions .btn { flex: 1 1 130px; }
+      .flow-step { grid-template-columns: 18px 1fr; }
+      .flow-step-status { grid-column: 2; }
+    }
+  </style>
+</head>
+<body>
+  <div class="layout">
+    <aside class="sidebar" aria-label="Navegacao Supervisor">
+      <div class="brand">
+        <div class="brand-badge">DT</div>
+        <div>
+          <p class="brand-title">Drip Test App</p>
+          <p class="brand-sub">Central Supervisor(a)</p>
+        </div>
+      </div>
+      <nav class="nav">
+        <a class="active" href="DripSupervisor.html">Supervisao</a>
+        <a href="DripReports.html">Laudos e planilhas</a>
+        <a href="DripSettings.html">Banco e Dados</a>
+        <a href="index.html">Perfis</a>
+      </nav>
+    </aside>
+
+    <main class="main">
+      <header class="topbar panel">
+        <div>
+          <p class="eyebrow">Central de Supervisao da Qualidade</p>
+          <h1>Processos, revisoes, lotes e envio operacional</h1>
+          <p id="liveClock" class="subtitle">Atualizado agora</p>
+        </div>
+        <div class="actions">
+          <button class="btn btn-ghost" id="refreshBtn" type="button">Atualizar</button>
+          <button class="btn btn-primary" id="syncBankBtn" type="button">Consultar banco</button>
+          <button class="btn btn-ghost" id="flowSimBtn" type="button">Fluxo de dados</button>
+        </div>
+      </header>
+
+      <section class="filters-panel panel" aria-label="Filtros corporativos">
+        <div class="chips" id="analysisChips"></div>
+        <div class="filters">
+          <select id="statusFilter">
+            <option value="all">Status: Todos</option>
+            <option value="running">Em andamento</option>
+            <option value="waiting">Aguardando</option>
+            <option value="done">Finalizado</option>
+            <option value="error">Erro/Pendente</option>
+          </select>
+          <select id="changedFilter">
+            <option value="all">Revisao: Todas</option>
+            <option value="changed">Somente pendencias</option>
+            <option value="normal">Somente normal</option>
+          </select>
+          <input id="searchInput" type="search" placeholder="Buscar lote, monitor, ID, produto..." />
+        </div>
+      </section>
+
+      <section class="status-strip" id="kpis" aria-label="Indicadores do supervisor"></section>
+      <section class="status-strip" id="alertsRow" aria-label="Alertas de supervisao"></section>
+
+      <section class="command-grid">
+        <div class="stack">
+          <section class="panel block" aria-labelledby="processTitle">
+            <div class="block-head">
+              <div>
+                <p class="eyebrow">Bloco 1</p>
+                <h2 id="processTitle">Etapa dos processos</h2>
+                <p>Visao viva da operacao: pesagem inicial, gotejamento, pesagem final, atraso e finalizacao.</p>
+              </div>
+            </div>
+            <div class="table-wrap short-table">
+              <table>
+                <thead>
+                  <tr><th>Etapa</th><th>Qtd.</th><th>Lotes</th><th>Responsaveis</th><th>Situacao</th></tr>
+                </thead>
+                <tbody id="overviewBody"></tbody>
+              </table>
+            </div>
+          </section>
+
+          <section class="panel block" aria-labelledby="analysisTitle">
+            <div class="block-head">
+              <div>
+                <p class="eyebrow">Bloco 2</p>
+                <h2 id="analysisTitle">Analises em acompanhamento</h2>
+                <p>Fila de amostras para acompanhar processo, monitor, lote, tempo, status e resultado.</p>
+              </div>
+              <div class="actions">
+                <button class="btn btn-ghost" id="exportCsvBtn" type="button">CSV</button>
+                <button class="btn btn-ghost" id="exportJsonBtn" type="button">JSON</button>
+                <button class="btn btn-ghost" id="exportPdfBtn" type="button">PDF</button>
+              </div>
+            </div>
+            <div class="table-wrap">
+              <table>
+                <thead>
+                  <tr>
+                    <th data-sort="id">ID</th>
+                    <th data-sort="lot">Lote</th>
+                    <th data-sort="analysisType">Analise</th>
+                    <th data-sort="createdAt">Inicio</th>
+                    <th data-sort="elapsedMin">Tempo</th>
+                    <th data-sort="responsible">Monitor</th>
+                    <th data-sort="sampleType">Amostra</th>
+                    <th data-sort="status">Status</th>
+                    <th data-sort="result">Revisao</th>
+                  </tr>
+                </thead>
+                <tbody id="opsBody"></tbody>
+              </table>
+            </div>
+            <div class="pager">
+              <button class="btn btn-ghost" id="prevPageBtn" type="button">Anterior</button>
+              <span id="pageInfo" class="muted">Pagina 1</span>
+              <button class="btn btn-ghost" id="nextPageBtn" type="button">Proxima</button>
+            </div>
+          </section>
+        </div>
+
+        <div class="stack">
+          <section class="panel block" aria-labelledby="reviewTitle">
+            <div class="block-head">
+              <div>
+                <p class="eyebrow">Bloco 3</p>
+                <h2 id="reviewTitle">Revisoes e pendencias</h2>
+                <p>Fila de pontos que o supervisor precisa olhar antes de liberar laudo ou enviar dados.</p>
+              </div>
+            </div>
+            <div class="review-list" id="reviewQueue"></div>
+          </section>
+
+          <section class="panel block" aria-labelledby="lotTitle">
+            <div class="block-head">
+              <div>
+                <p class="eyebrow">Bloco 4</p>
+                <h2 id="lotTitle">Detalhes de lote</h2>
+                <p>Resumo consolidado por lote com amostras, finalizacoes e drip medio.</p>
+              </div>
+            </div>
+            <div class="lot-list" id="lotList"></div>
+            <div class="lot-detail" id="lotDetail"></div>
+          </section>
+
+          <section class="panel block" aria-labelledby="historyTitle">
+            <div class="block-head">
+              <div>
+                <p class="eyebrow">Bloco 5</p>
+                <h2 id="historyTitle">Historico, laudos e envio</h2>
+                <p>Registro supervisório para exportar dados, abrir laudo/planilha e preparar envio.</p>
+              </div>
+            </div>
+            <div class="send-list" id="historyBody"></div>
+          </section>
+        </div>
+      </section>
+    </main>
+  </div>
+
+  <div class="modal" id="detailModal" role="dialog" aria-modal="true" aria-label="Detalhe da analise">
+    <div class="modal-card">
+      <div class="actions" style="justify-content:space-between;margin-bottom:10px;">
+        <strong>Detalhamento da analise</strong>
+        <button class="btn btn-ghost" id="closeModalBtn" type="button">Fechar</button>
+      </div>
+      <div class="modal-grid" id="detailGrid"></div>
+    </div>
+  </div>
+
+  <div class="modal" id="flowModal" role="dialog" aria-modal="true" aria-label="Simulacao de fluxo de dados">
+    <div class="modal-card">
+      <div class="actions" style="justify-content:space-between;margin-bottom:10px;">
+        <strong>Fluxo corporativo: operacao ate supervisao</strong>
+        <button class="btn btn-ghost" id="closeFlowModalBtn" type="button">Fechar</button>
+      </div>
+      <p class="flow-note" id="flowHeadline">Clique em iniciar para executar a simulacao completa do trafego.</p>
+      <div class="actions" style="justify-content:flex-start;margin-bottom:10px;">
+        <button class="btn btn-primary" id="startFlowBtn" type="button">Iniciar simulacao</button>
+        <button class="btn btn-ghost" id="nextFlowBtn" type="button">Proximo passo</button>
+        <button class="btn btn-ghost" id="resetFlowBtn" type="button">Reiniciar</button>
+      </div>
+      <ul id="flowSteps" class="flow-steps"></ul>
+      <div class="table-wrap" style="margin-top:10px;">
+        <table>
+          <thead>
+            <tr><th>Horario</th><th>Evento</th><th>Origem</th><th>Destino</th><th>Canal</th><th>Status</th></tr>
+          </thead>
+          <tbody id="flowTraceBody">
+            <tr><td colspan="6" class="muted">Sem eventos simulados ainda.</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <script src="drip-data.js?v=report-accents-3"></script>
+  <script src="drip-api.js"></script>
+  <script src="drip-sync.js"></script>
+  <script src="drip-ui.js?v=ui-2026-4"></script>
+  <script>
+    const STATE = {
+      activeAnalysis: 'Todos',
+      statusFilter: 'all',
+      changedFilter: 'all',
+      query: '',
+      sortKey: 'createdAt',
+      sortDir: 'desc',
+      page: 1,
+      pageSize: 12,
+      data: [],
+      filtered: [],
+      selectedLot: '',
+      timerId: null
+    };
+
+    const ANALYSES = ['Todos', 'DripTest', 'Analise Microbiologica', 'Controle Quimico', 'Pesagem', 'Outras analises'];
+    const CRITICAL_MIN = 35;
+    const LIVE_INTERVAL_MS = 12000;
+
+    const analysisChipsEl = document.getElementById('analysisChips');
+    const statusFilterEl = document.getElementById('statusFilter');
+    const changedFilterEl = document.getElementById('changedFilter');
+    const searchInputEl = document.getElementById('searchInput');
+    const liveClockEl = document.getElementById('liveClock');
+    const kpisEl = document.getElementById('kpis');
+    const alertsRowEl = document.getElementById('alertsRow');
+    const overviewBodyEl = document.getElementById('overviewBody');
+    const opsBodyEl = document.getElementById('opsBody');
+    const reviewQueueEl = document.getElementById('reviewQueue');
+    const lotListEl = document.getElementById('lotList');
+    const lotDetailEl = document.getElementById('lotDetail');
+    const historyBodyEl = document.getElementById('historyBody');
+    const detailModalEl = document.getElementById('detailModal');
+    const detailGridEl = document.getElementById('detailGrid');
+    const pageInfoEl = document.getElementById('pageInfo');
+    const flowModalEl = document.getElementById('flowModal');
+    const flowStepsEl = document.getElementById('flowSteps');
+    const flowTraceBodyEl = document.getElementById('flowTraceBody');
+    const flowHeadlineEl = document.getElementById('flowHeadline');
+
+    const FLOW_STEPS = [
+      { title: 'Cadastro inicial da amostra', detail: 'Monitor registra lote, turno, peso bruto e liquido inicial em DripTeste.', source: 'DripTeste', target: 'Storage local', channel: 'localStorage', status: 'running' },
+      { title: 'Agenda e lembrete', detail: 'App calcula tempo previsto e dispara acompanhamento do gotejamento.', source: 'Agenda', target: 'Monitor', channel: 'local + notificacao', status: 'running' },
+      { title: 'Pesagem final e calculos', detail: 'Monitor finaliza em DripTestF e o app calcula drip %, media final e status.', source: 'DripTestF', target: 'Storage local', channel: 'localStorage', status: 'running' },
+      { title: 'Revisao supervisoria', detail: 'Supervisor analisa pendencias, lotes, detalhes e historico antes do envio.', source: 'DripSupervisor', target: 'Qualidade', channel: 'local + consulta', status: 'running' },
+      { title: 'Laudo e planilha', detail: 'Tela de laudos gera PDF e planilha padrao para garantia documental.', source: 'DripReports', target: 'Documental', channel: 'PDF/CSV', status: 'done' }
+    ];
+    const FLOW_STATE = { index: -1, timerId: null };
+
+    function esc(value) {
+      return String(value == null ? '' : value)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#39;');
+    }
+
+    function dash(value) {
+      const text = String(value == null ? '' : value).trim();
+      return text || '-';
+    }
+
+    function fmtDate(value) {
+      if (!value) return '-';
+      const d = new Date(value);
+      if (Number.isNaN(d.getTime())) return '-';
+      return d.toLocaleString('pt-BR', { day:'2-digit', month:'2-digit', year:'numeric', hour:'2-digit', minute:'2-digit' });
+    }
+
+    function fmtMin(value) {
+      if (!Number.isFinite(value) || value < 0) return '-';
+      const h = Math.floor(value / 60);
+      const m = Math.round(value % 60);
+      return h > 0 ? h + 'h ' + m + 'm' : m + ' min';
+    }
+
+    function fmtGram(value) {
+      const n = Number(value);
+      return Number.isFinite(n) ? n.toLocaleString('pt-BR', { maximumFractionDigits: 2 }) + ' g' : '-';
+    }
+
+    function fmtPercent(value) {
+      const n = Number(value);
+      return Number.isFinite(n) ? DripData.formatPreciseNumber(n, 6) + ' %' : '-';
+    }
+
+    function nowMs() { return Date.now(); }
+
+    function elapsedMin(start) {
+      const ms = start ? new Date(start).getTime() : NaN;
+      if (!Number.isFinite(ms)) return null;
+      return Math.max(0, (nowMs() - ms) / 60000);
+    }
+
+    function expectedAt(record) {
+      const start = record.createdAt || record.initialWeighedAt || record.created_at;
+      const time = Number(record.timeMin || record.time_min);
+      const ms = start ? new Date(start).getTime() : NaN;
+      if (!Number.isFinite(ms) || !Number.isFinite(time)) return null;
+      return ms + time * 60000;
+    }
+
+    function detectResult(record) {
+      const marketText = String(record.result || record.marketIndicator || record.market_indicator || '').toLowerCase();
+      if (marketText.includes('altera') || record.marketWarning || record.market_warning) return 'PENDENTE DE REVISAO';
+      if (record.finalNet == null && String(record.status || '').toLowerCase() !== 'final') return 'AGUARDANDO FINAL';
+      return 'Normal';
+    }
+
+    function mapStatus(record) {
+      const raw = String(record.status || '').toLowerCase();
+      if (raw === 'final' || raw === 'done' || raw === 'completed') return 'done';
+      if (raw === 'error' || raw === 'failed') return 'error';
+      if (record.finalNet != null || record.final_net_g != null || record.stage === 'Finalizado') return 'done';
+      if (record.stage && String(record.stage).toLowerCase().includes('aguard')) return 'waiting';
+      if (record.createdAt || record.created_at || record.initial_weighed_at) return 'running';
+      return 'waiting';
+    }
+
+    function stageFrom(record) {
+      if (record.stage) return String(record.stage);
+      if (record.finalNet != null || record.final_net_g != null) return 'Finalizado';
+      const planned = expectedAt(record);
+      if (planned && nowMs() >= planned) return 'Aguardando pesagem final';
+      if (record.createdAt || record.created_at || record.initial_weighed_at) return 'Em gotejamento';
+      return 'Pesagem inicial';
+    }
+
+    function analysisFrom(record) {
+      const a = String(record.analysisType || record.analysis_type || '').trim();
+      if (a) return a;
+      if (record.gross != null || record.finalNet != null || record.initial_gross_g != null) return 'DripTest';
+      return 'Outras analises';
+    }
+
+    function firstText() {
+      for (let i = 0; i < arguments.length; i += 1) {
+        const text = String(arguments[i] == null ? '' : arguments[i]).trim();
+        if (text) return text;
+      }
+      return '-';
+    }
+
+    function normalizeLocal() {
+      const report = DripData.buildReportData();
+      const rows = report.initialRecords || [];
+      return rows.map((r, idx) => {
+        const plannedAt = expectedAt(r);
+        const status = mapStatus(r);
+        const stage = stageFrom(r);
+        return {
+          id: r.id || r.weighingId || 'LOC-' + (idx + 1),
+          source: 'local',
+          analysisType: analysisFrom(r),
+          lot: firstText(r.lote, r.lot, 'Sem lote'),
+          createdAt: r.createdAt || r.initialWeighedAt || r.created_at,
+          plannedAt,
+          dripAt: r.dripAt || r.drippingAt || plannedAt,
+          elapsedMin: elapsedMin(r.createdAt || r.initialWeighedAt || r.created_at),
+          responsible: firstText(r.monitor, r.monitorName, '-'),
+          sampleType: firstText(r.species, r.productBrand, '-'),
+          productBrand: firstText(r.productBrand, r.species, '-'),
+          shift: firstText(r.shift, r.turno, '-'),
+          sector: firstText(r.plantName, r.sectorName, '-'),
+          fabDate: firstText(r.fabDate, '-'),
+          gross: r.gross,
+          net: r.net,
+          finalNet: r.finalNet,
+          dripPct: r.grossAbsPct || r.lossPct,
+          status,
+          stage,
+          result: detectResult(r),
+          observations: firstText(r.notes, r.obs, '-'),
+          raw: r
+        };
+      });
+    }
+
+    async function normalizeServer() {
+      if (!DripApi.isEnabled()) return [];
+      const weighings = await DripApi.listWeighings({ limit: 150 });
+      return (weighings || []).map((w) => {
+        const mapped = {
+          id: w.id || w.weighing_id || w.report_number || '-',
+          source: 'server',
+          analysisType: analysisFrom(w),
+          lot: firstText(w.lot_code, w.lote, 'Sem lote'),
+          createdAt: w.initial_weighed_at || w.created_at,
+          plannedAt: w.expected_at || null,
+          dripAt: w.drip_at || w.expected_at || null,
+          elapsedMin: elapsedMin(w.initial_weighed_at || w.created_at),
+          responsible: firstText(w.monitor_name, w.monitor, '-'),
+          sampleType: firstText(w.sample_type, w.product_brand, w.species, '-'),
+          productBrand: firstText(w.product_brand, w.species, '-'),
+          shift: firstText(w.shift, w.turno, '-'),
+          sector: firstText(w.plant_name, w.sector_name, '-'),
+          fabDate: firstText(w.fabrication_date, '-'),
+          gross: w.initial_gross_g,
+          net: w.initial_net_g,
+          finalNet: w.final_net_g,
+          dripPct: w.loss_pct,
+          observations: firstText(w.notes, '-'),
+          raw: w
+        };
+        mapped.status = mapStatus({ status: w.status, createdAt: w.created_at, finalNet: w.final_net_g });
+        mapped.stage = stageFrom({ stage: w.stage, finalNet: w.final_net_g, dripAt: mapped.dripAt, createdAt: mapped.createdAt });
+        mapped.result = detectResult(mapped);
+        return mapped;
+      });
+    }
+
+    function dedupe(records) {
+      const seen = new Set();
+      const out = [];
+      records.forEach((r) => {
+        const key = String(r.id) + '|' + String(r.createdAt || '');
+        if (seen.has(key)) return;
+        seen.add(key);
+        out.push(r);
+      });
+      return out;
+    }
+
+    function buildChips() {
+      analysisChipsEl.replaceChildren();
+      ANALYSES.forEach((name) => {
+        const b = document.createElement('button');
+        b.type = 'button';
+        b.className = 'chip' + (STATE.activeAnalysis === name ? ' active' : '');
+        b.textContent = name;
+        b.addEventListener('click', () => {
+          STATE.activeAnalysis = name;
+          STATE.page = 1;
+          buildChips();
+          applyFiltersAndRender();
+        });
+        analysisChipsEl.appendChild(b);
+      });
+    }
+
+    function applyFiltersAndRender() {
+      const q = STATE.query.trim().toLowerCase();
+      STATE.filtered = STATE.data.filter((r) => {
+        if (STATE.activeAnalysis !== 'Todos' && r.analysisType !== STATE.activeAnalysis) return false;
+        if (STATE.statusFilter !== 'all' && r.status !== STATE.statusFilter) return false;
+        if (STATE.changedFilter === 'changed' && r.result === 'Normal') return false;
+        if (STATE.changedFilter === 'normal' && r.result !== 'Normal') return false;
+        if (!q) return true;
+        const txt = [r.id, r.lot, r.analysisType, r.responsible, r.sampleType, r.productBrand, r.stage, r.result].join(' ').toLowerCase();
+        return txt.includes(q);
+      });
+      sortFiltered();
+      renderAll();
+    }
+
+    function sortFiltered() {
+      const key = STATE.sortKey;
+      const dir = STATE.sortDir === 'asc' ? 1 : -1;
+      STATE.filtered.sort((a, b) => {
+        const av = a[key] == null ? '' : a[key];
+        const bv = b[key] == null ? '' : b[key];
+        if (key === 'createdAt' || key === 'dripAt' || key === 'plannedAt') return (new Date(av).getTime() - new Date(bv).getTime()) * dir;
+        if (typeof av === 'number' || typeof bv === 'number') return ((Number(av) || 0) - (Number(bv) || 0)) * dir;
+        return String(av).localeCompare(String(bv), 'pt-BR') * dir;
+      });
+    }
+
+    function statusTag(status) {
+      if (status === 'done') return '<span class="tag tag-ok">Finalizado</span>';
+      if (status === 'running') return '<span class="tag tag-run">Em andamento</span>';
+      if (status === 'error') return '<span class="tag tag-error">Erro/Pendente</span>';
+      return '<span class="tag tag-warn">Aguardando</span>';
+    }
+
+    function reviewTag(result) {
+      if (result === 'Normal') return '<span class="tag tag-ok">Normal</span>';
+      if (result === 'AGUARDANDO FINAL') return '<span class="tag tag-warn">Aguardando final</span>';
+      return '<span class="tag tag-error">Revisar</span>';
+    }
+
+    function groupBy(items, selector) {
+      const map = new Map();
+      items.forEach((item) => {
+        const key = selector(item);
+        if (!map.has(key)) map.set(key, []);
+        map.get(key).push(item);
+      });
+      return map;
+    }
+
+    function renderKpis() {
+      const all = STATE.filtered;
+      const lots = new Set(all.map((r) => r.lot).filter(Boolean)).size;
+      const running = all.filter((r) => r.status === 'running').length;
+      const done = all.filter((r) => r.status === 'done').length;
+      const pending = all.filter((r) => r.status === 'waiting').length;
+      const review = all.filter((r) => r.result !== 'Normal').length;
+      const list = [
+        ['Processos ativos', running, 'Amostras ainda em acompanhamento'],
+        ['Finalizados', done, 'Amostras com pesagem final registrada'],
+        ['Pendencias', pending, 'Itens aguardando etapa ou decisao'],
+        ['Lotes no filtro', lots, 'Lotes envolvidos na visao atual'],
+        ['Revisoes abertas', review, 'Pontos que exigem validacao supervisoria'],
+        ['Base de dados', DripApi.isEnabled() ? 'Local + API' : 'Local', 'Origem atual da supervisao'],
+        ['Registros', all.length, 'Total no recorte atual'],
+        ['Atualizacao', '12s', 'Ciclo automatico da tela']
+      ];
+      kpisEl.replaceChildren();
+      list.forEach((item) => {
+        const d = document.createElement('div');
+        d.className = 'status-card panel';
+        d.innerHTML = '<span>' + esc(item[0]) + '</span><b>' + esc(item[1]) + '</b><small>' + esc(item[2]) + '</small>';
+        kpisEl.appendChild(d);
+      });
+    }
+
+    function renderAlerts() {
+      const critical = STATE.filtered.filter((r) => r.status !== 'done' && Number(r.elapsedMin) >= CRITICAL_MIN).length;
+      const review = STATE.filtered.filter((r) => r.result !== 'Normal').length;
+      const finalReady = STATE.filtered.filter((r) => r.status === 'done').length;
+      const list = [
+        ['Pendencias de revisao', review, review > 0 ? 'Existem registros que precisam de validacao.' : 'Sem pendencias criticas no filtro atual.'],
+        ['Tempo critico', critical, critical > 0 ? 'Amostras proximas ou acima do tempo critico.' : 'Sem processos em tempo critico.'],
+        ['Prontos para laudo', finalReady, finalReady > 0 ? 'Registros finalizados podem entrar no laudo.' : 'Nenhum registro finalizado no filtro.'],
+        ['Envio operacional', STATE.filtered.length, 'Dados disponiveis para exportacao, laudo e planilha.']
+      ];
+      alertsRowEl.replaceChildren();
+      list.forEach((item, idx) => {
+        const card = document.createElement('div');
+        card.className = 'status-card panel';
+        card.innerHTML = '<span>' + esc(item[0]) + '</span><b>' + esc(item[1]) + '</b><small>' + esc(item[2]) + '</small>';
+        if ((idx === 0 || idx === 1) && Number(item[1]) > 0) card.style.borderColor = 'rgba(180, 35, 53, 0.35)';
+        alertsRowEl.appendChild(card);
+      });
+    }
+
+    function renderOverview() {
+      const stages = [
+        ['Pesagem inicial', (r) => r.stage === 'Pesagem inicial'],
+        ['Em gotejamento', (r) => r.stage === 'Em gotejamento' || r.status === 'running'],
+        ['Aguardando pesagem final', (r) => r.stage === 'Aguardando pesagem final' || r.status === 'waiting'],
+        ['Finalizado', (r) => r.status === 'done']
+      ];
+      overviewBodyEl.replaceChildren();
+      stages.forEach(([label, predicate]) => {
+        const rows = STATE.filtered.filter(predicate);
+        const lots = new Set(rows.map((r) => r.lot).filter(Boolean));
+        const monitors = new Set(rows.map((r) => r.responsible).filter(Boolean));
+        const tr = document.createElement('tr');
+        tr.innerHTML =
+          '<td><strong>' + esc(label) + '</strong></td>' +
+          '<td>' + rows.length + '</td>' +
+          '<td>' + esc(Array.from(lots).slice(0, 3).join(', ') || '-') + '</td>' +
+          '<td>' + esc(Array.from(monitors).slice(0, 3).join(', ') || '-') + '</td>' +
+          '<td>' + (rows.length ? statusTag(label === 'Finalizado' ? 'done' : 'running') : '<span class="tag tag-neutral">Sem fila</span>') + '</td>';
+        overviewBodyEl.appendChild(tr);
+      });
+    }
+
+    function currentPageRows() {
+      const start = (STATE.page - 1) * STATE.pageSize;
+      return STATE.filtered.slice(start, start + STATE.pageSize);
+    }
+
+    function renderOps() {
+      const totalPages = Math.max(1, Math.ceil(STATE.filtered.length / STATE.pageSize));
+      if (STATE.page > totalPages) STATE.page = totalPages;
+      pageInfoEl.textContent = 'Pagina ' + STATE.page + ' de ' + totalPages;
+      opsBodyEl.replaceChildren();
+      const rows = currentPageRows();
+      if (!rows.length) {
+        opsBodyEl.innerHTML = '<tr><td colspan="9" class="muted">Nenhum registro para os filtros atuais.</td></tr>';
+        return;
+      }
+      rows.forEach((r) => {
+        const tr = document.createElement('tr');
+        if (r.result !== 'Normal') tr.classList.add('row-change');
+        tr.innerHTML =
+          '<td><button class="btn btn-ghost" type="button" data-detail="' + esc(r.id) + '">' + esc(r.id) + '</button></td>' +
+          '<td>' + esc(r.lot) + '</td>' +
+          '<td>' + esc(r.analysisType) + '</td>' +
+          '<td>' + esc(fmtDate(r.createdAt)) + '</td>' +
+          '<td>' + esc(fmtMin(r.elapsedMin)) + '</td>' +
+          '<td>' + esc(r.responsible) + '</td>' +
+          '<td>' + esc(r.sampleType) + '</td>' +
+          '<td>' + statusTag(r.status) + '<br><small class="muted">' + esc(r.stage) + '</small></td>' +
+          '<td>' + reviewTag(r.result) + '</td>';
+        opsBodyEl.appendChild(tr);
+      });
+    }
+
+    function renderReviewQueue() {
+      reviewQueueEl.replaceChildren();
+      const rows = STATE.filtered
+        .filter((r) => r.result !== 'Normal' || r.status === 'waiting' || (r.status !== 'done' && Number(r.elapsedMin) >= CRITICAL_MIN))
+        .slice(0, 8);
+      if (!rows.length) {
+        reviewQueueEl.innerHTML = '<div class="review-item"><strong>Sem pendencias criticas</strong><small>O filtro atual nao possui registros exigindo revisao imediata.</small></div>';
+        return;
+      }
+      rows.forEach((r) => {
+        const div = document.createElement('div');
+        div.className = 'review-item';
+        div.innerHTML =
+          '<strong>' + esc(r.lot) + ' | ' + esc(r.sampleType) + '</strong>' +
+          '<small>' + esc(r.result) + ' | ' + esc(r.stage) + ' | Monitor: ' + esc(r.responsible) + '</small>' +
+          '<div class="mini-actions"><button class="btn btn-ghost" type="button" data-detail="' + esc(r.id) + '">Ver detalhes</button></div>';
+        reviewQueueEl.appendChild(div);
+      });
+    }
+
+    function getLotSummaries() {
+      const groups = groupBy(STATE.filtered, (r) => r.lot || 'Sem lote');
+      return Array.from(groups.entries()).map(([lot, rows]) => {
+        const finalized = rows.filter((r) => r.status === 'done');
+        const review = rows.filter((r) => r.result !== 'Normal');
+        const pctValues = rows.map((r) => Number(r.dripPct)).filter(Number.isFinite);
+        const avg = pctValues.length ? pctValues.reduce((sum, value) => sum + value, 0) / pctValues.length : null;
+        return {
+          lot,
+          rows,
+          total: rows.length,
+          finalized: finalized.length,
+          review: review.length,
+          monitors: new Set(rows.map((r) => r.responsible).filter(Boolean)).size,
+          avg
+        };
+      }).sort((a, b) => b.review - a.review || b.total - a.total || a.lot.localeCompare(b.lot, 'pt-BR'));
+    }
+
+    function renderLots() {
+      const lots = getLotSummaries();
+      lotListEl.replaceChildren();
+      if (!lots.length) {
+        lotListEl.innerHTML = '<div class="lot-card"><strong>Nenhum lote no filtro</strong><small>Ajuste os filtros ou atualize a tela.</small></div>';
+        lotDetailEl.replaceChildren();
+        return;
+      }
+      if (!STATE.selectedLot || !lots.some((item) => item.lot === STATE.selectedLot)) {
+        STATE.selectedLot = lots[0].lot;
+      }
+      lots.slice(0, 6).forEach((item) => {
+        const button = document.createElement('button');
+        button.type = 'button';
+        button.className = 'lot-card' + (item.lot === STATE.selectedLot ? ' active' : '');
+        button.innerHTML =
+          '<strong>' + esc(item.lot) + '</strong>' +
+          '<small>' + item.total + ' amostra(s) | ' + item.finalized + ' finalizada(s) | drip medio ' + esc(fmtPercent(item.avg)) + '</small>';
+        button.addEventListener('click', () => {
+          STATE.selectedLot = item.lot;
+          renderLots();
+        });
+        lotListEl.appendChild(button);
+      });
+      const selected = lots.find((item) => item.lot === STATE.selectedLot) || lots[0];
+      lotDetailEl.innerHTML =
+        '<div class="detail-tile"><b>Lote</b><span>' + esc(selected.lot) + '</span></div>' +
+        '<div class="detail-tile"><b>Amostras</b><span>' + selected.total + '</span></div>' +
+        '<div class="detail-tile"><b>Finalizadas</b><span>' + selected.finalized + '</span></div>' +
+        '<div class="detail-tile"><b>Revisoes</b><span>' + selected.review + '</span></div>' +
+        '<div class="detail-tile"><b>Monitores</b><span>' + selected.monitors + '</span></div>' +
+        '<div class="detail-tile"><b>Drip medio</b><span>' + esc(fmtPercent(selected.avg)) + '</span></div>';
+    }
+
+    function renderHistory() {
+      historyBodyEl.replaceChildren();
+      const done = STATE.filtered.filter((r) => r.status === 'done').length;
+      const pending = STATE.filtered.filter((r) => r.result !== 'Normal').length;
+      const rows = [
+        ['Laudo tecnico', done ? 'Disponivel com registros finalizados' : 'Aguardando finalizacoes', 'Abrir laudos', 'DripReports.html'],
+        ['Planilha padrao', STATE.filtered.length ? 'Base pronta para conferencia/exportacao' : 'Sem dados no filtro', 'Abrir planilha', 'DripReports.html'],
+        ['Pacote de dados', pending ? 'Enviar com pendencias destacadas' : 'Dados sem pendencias criticas', 'Exportar JSON', 'json'],
+        ['Historico supervisor', STATE.filtered.length + ' registro(s) no recorte atual', 'Exportar CSV', 'csv']
+      ];
+      rows.forEach((item) => {
+        const div = document.createElement('div');
+        div.className = 'send-item';
+        const action = item[3] === 'json'
+          ? '<button class="btn btn-ghost" type="button" data-action="json">' + esc(item[2]) + '</button>'
+          : item[3] === 'csv'
+            ? '<button class="btn btn-ghost" type="button" data-action="csv">' + esc(item[2]) + '</button>'
+            : '<a class="btn btn-ghost" href="' + esc(item[3]) + '">' + esc(item[2]) + '</a>';
+        div.innerHTML = '<strong>' + esc(item[0]) + '</strong><small>' + esc(item[1]) + '</small><div class="mini-actions">' + action + '</div>';
+        historyBodyEl.appendChild(div);
+      });
+    }
+
+    function renderAll() {
+      renderKpis();
+      renderAlerts();
+      renderOverview();
+      renderOps();
+      renderReviewQueue();
+      renderLots();
+      renderHistory();
+      liveClockEl.textContent = 'Atualizado em ' + new Date().toLocaleString('pt-BR') + ' | ' + (DripApi.isEnabled() ? 'local + API' : 'base local');
+    }
+
+    function openDetail(id) {
+      const row = STATE.filtered.find((r) => String(r.id) === String(id));
+      if (!row) return;
+      const entries = [
+        ['ID da analise', row.id],
+        ['Lote', row.lot],
+        ['Tipo de analise', row.analysisType],
+        ['Inicio', fmtDate(row.createdAt)],
+        ['Horario previsto', fmtDate(row.plannedAt || row.dripAt)],
+        ['Tempo decorrido', fmtMin(row.elapsedMin)],
+        ['Monitor', row.responsible],
+        ['Setor', row.sector],
+        ['Turno', row.shift],
+        ['Amostra', row.sampleType],
+        ['Marca', row.productBrand],
+        ['Fabricacao', row.fabDate],
+        ['Peso bruto', fmtGram(row.gross)],
+        ['Liquido inicial', fmtGram(row.net)],
+        ['Liquido final', fmtGram(row.finalNet)],
+        ['Drip %', fmtPercent(row.dripPct)],
+        ['Status', row.stage],
+        ['Revisao', row.result],
+        ['Observacoes', row.observations || '-'],
+        ['Origem', row.source === 'server' ? 'Banco/API' : 'Local']
+      ];
+      detailGridEl.replaceChildren();
+      entries.forEach((entry) => {
+        const d = document.createElement('div');
+        d.innerHTML = '<b>' + esc(entry[0]) + '</b><span>' + esc(entry[1]) + '</span>';
+        detailGridEl.appendChild(d);
+      });
+      detailModalEl.classList.add('show');
+    }
+
+    function downloadBlob(filename, content, type) {
+      const blob = new Blob([content], { type: type || 'text/plain;charset=utf-8' });
+      const a = document.createElement('a');
+      a.href = URL.createObjectURL(blob);
+      a.download = filename;
+      document.body.appendChild(a);
+      a.click();
+      URL.revokeObjectURL(a.href);
+      a.remove();
+    }
+
+    function exportCsv() {
+      const headers = ['id','lot','analysisType','createdAt','plannedAt','elapsedMin','responsible','sampleType','productBrand','status','stage','result','gross','net','finalNet','dripPct','observations','source'];
+      const lines = [headers.join(';')];
+      STATE.filtered.forEach((r) => {
+        const values = headers.map((h) => '"' + String(r[h] == null ? '' : r[h]).replace(/"/g, '""') + '"');
+        lines.push(values.join(';'));
+      });
+      downloadBlob('supervisor_central_qualidade.csv', lines.join('\n'), 'text/csv;charset=utf-8');
+    }
+
+    function exportJson() {
+      downloadBlob('supervisor_central_qualidade.json', JSON.stringify(STATE.filtered, null, 2), 'application/json;charset=utf-8');
+    }
+
+    function exportPdf() {
+      window.print();
+    }
+
+    async function loadData(syncServer) {
+      const localRows = normalizeLocal();
+      let serverRows = [];
+      if (syncServer) {
+        try { serverRows = await normalizeServer(); } catch (error) { console.error(error); }
+      }
+      STATE.data = dedupe(localRows.concat(serverRows));
+      applyFiltersAndRender();
+    }
+
+    function renderFlowSteps() {
+      flowStepsEl.replaceChildren();
+      FLOW_STEPS.forEach((step, idx) => {
+        const li = document.createElement('li');
+        const stateClass = idx < FLOW_STATE.index ? ' done' : (idx === FLOW_STATE.index ? ' current' : '');
+        li.className = 'flow-step' + stateClass;
+        li.innerHTML =
+          '<span class="flow-step-dot" aria-hidden="true"></span>' +
+          '<div><strong>' + esc(step.title) + '</strong><div class="muted">' + esc(step.detail) + '</div></div>' +
+          '<span class="flow-step-status">' + (idx < FLOW_STATE.index ? 'Concluido' : idx === FLOW_STATE.index ? 'Executando' : 'Pendente') + '</span>';
+        flowStepsEl.appendChild(li);
+      });
+    }
+
+    function pushTrace(step, forcedStatus) {
+      if (!step) return;
+      if (flowTraceBodyEl.querySelector('td[colspan]')) flowTraceBodyEl.replaceChildren();
+      const tr = document.createElement('tr');
+      const stamp = new Date().toLocaleTimeString('pt-BR');
+      const status = forcedStatus || step.status || 'running';
+      tr.innerHTML =
+        '<td>' + esc(stamp) + '</td>' +
+        '<td>' + esc(step.title) + '</td>' +
+        '<td>' + esc(step.source) + '</td>' +
+        '<td>' + esc(step.target) + '</td>' +
+        '<td>' + esc(step.channel) + '</td>' +
+        '<td>' + statusTag(status) + '</td>';
+      flowTraceBodyEl.appendChild(tr);
+    }
+
+    function advanceFlowStep() {
+      if (FLOW_STATE.index >= FLOW_STEPS.length - 1) {
+        flowHeadlineEl.textContent = 'Simulacao finalizada. Fluxo validado: operacao, revisao, laudo e envio.';
+        return false;
+      }
+      FLOW_STATE.index += 1;
+      const current = FLOW_STEPS[FLOW_STATE.index];
+      flowHeadlineEl.textContent = current.detail;
+      pushTrace(current, FLOW_STATE.index === FLOW_STEPS.length - 1 ? 'done' : current.status);
+      renderFlowSteps();
+      return FLOW_STATE.index < FLOW_STEPS.length - 1;
+    }
+
+    function resetFlowSimulation() {
+      FLOW_STATE.index = -1;
+      if (FLOW_STATE.timerId) clearInterval(FLOW_STATE.timerId);
+      FLOW_STATE.timerId = null;
+      flowHeadlineEl.textContent = 'Clique em iniciar para executar a simulacao completa do trafego.';
+      flowTraceBodyEl.innerHTML = '<tr><td colspan="6" class="muted">Sem eventos simulados ainda.</td></tr>';
+      renderFlowSteps();
+    }
+
+    function startAutoSimulation() {
+      resetFlowSimulation();
+      advanceFlowStep();
+      FLOW_STATE.timerId = setInterval(() => {
+        const hasNext = advanceFlowStep();
+        if (!hasNext && FLOW_STATE.timerId) {
+          clearInterval(FLOW_STATE.timerId);
+          FLOW_STATE.timerId = null;
+        }
+      }, 1200);
+    }
+
+    function bindEvents() {
+      document.getElementById('refreshBtn').addEventListener('click', () => loadData(false));
+      document.getElementById('syncBankBtn').addEventListener('click', () => loadData(true));
+      statusFilterEl.addEventListener('change', () => { STATE.statusFilter = statusFilterEl.value; STATE.page = 1; applyFiltersAndRender(); });
+      changedFilterEl.addEventListener('change', () => { STATE.changedFilter = changedFilterEl.value; STATE.page = 1; applyFiltersAndRender(); });
+      searchInputEl.addEventListener('input', () => { STATE.query = searchInputEl.value || ''; STATE.page = 1; applyFiltersAndRender(); });
+      document.querySelectorAll('th[data-sort]').forEach((th) => {
+        th.addEventListener('click', () => {
+          const key = th.dataset.sort;
+          STATE.sortDir = (STATE.sortKey === key && STATE.sortDir === 'asc') ? 'desc' : 'asc';
+          STATE.sortKey = key;
+          applyFiltersAndRender();
+        });
+      });
+      document.getElementById('prevPageBtn').addEventListener('click', () => { if (STATE.page > 1) { STATE.page -= 1; renderOps(); } });
+      document.getElementById('nextPageBtn').addEventListener('click', () => {
+        const max = Math.max(1, Math.ceil(STATE.filtered.length / STATE.pageSize));
+        if (STATE.page < max) { STATE.page += 1; renderOps(); }
+      });
+      document.getElementById('exportCsvBtn').addEventListener('click', exportCsv);
+      document.getElementById('exportJsonBtn').addEventListener('click', exportJson);
+      document.getElementById('exportPdfBtn').addEventListener('click', exportPdf);
+      document.getElementById('flowSimBtn').addEventListener('click', () => {
+        flowModalEl.classList.add('show');
+        renderFlowSteps();
+      });
+      document.getElementById('startFlowBtn').addEventListener('click', startAutoSimulation);
+      document.getElementById('nextFlowBtn').addEventListener('click', advanceFlowStep);
+      document.getElementById('resetFlowBtn').addEventListener('click', resetFlowSimulation);
+      document.getElementById('closeFlowModalBtn').addEventListener('click', () => {
+        flowModalEl.classList.remove('show');
+        if (FLOW_STATE.timerId) clearInterval(FLOW_STATE.timerId);
+        FLOW_STATE.timerId = null;
+      });
+      document.body.addEventListener('click', (event) => {
+        const target = event.target;
+        if (!(target instanceof HTMLElement)) return;
+        const id = target.getAttribute('data-detail');
+        if (id) openDetail(id);
+        const action = target.getAttribute('data-action');
+        if (action === 'json') exportJson();
+        if (action === 'csv') exportCsv();
+      });
+      document.getElementById('closeModalBtn').addEventListener('click', () => detailModalEl.classList.remove('show'));
+      detailModalEl.addEventListener('click', (event) => { if (event.target === detailModalEl) detailModalEl.classList.remove('show'); });
+      flowModalEl.addEventListener('click', (event) => {
+        if (event.target === flowModalEl) {
+          flowModalEl.classList.remove('show');
+          if (FLOW_STATE.timerId) clearInterval(FLOW_STATE.timerId);
+          FLOW_STATE.timerId = null;
+        }
+      });
+    }
+
+    async function boot() {
+      buildChips();
+      bindEvents();
+      renderFlowSteps();
+      await loadData(DripApi.isEnabled());
+      STATE.timerId = setInterval(() => loadData(DripApi.isEnabled()), LIVE_INTERVAL_MS);
+    }
+
+    boot();
+  </script>
+</body>
+</html>
