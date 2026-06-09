@@ -1,80 +1,163 @@
-# DripTest Backend Python
+# DripTest - Arquitetura do Sistema
 
-Backend do DripTest usando FastAPI, psycopg e PostgreSQL.
+Documentos relacionados:
 
-Esta API foi criada para ligar o app Web ao banco definido em `database/schema.sql` e agora cobre autenticacao basica, lotes, pesagens, finalizacao, sincronizacao e laudos.
+- `docs/ANALISE_REQUISITOS.md`
+- `docs/INTEGRACAO_WEB_BANCO.md`
+- `docs/MODELO_BANCO_DADOS.md`
+- `backend-python/README.md`
+- `database/schema.sql`
 
-Estado atual da integracao:
+## 1. Objetivo
 
-- a pesagem inicial do app Web ja consegue gravar direto em `POST /weighings`;
-- a tela de laudos agora consegue sincronizar os dados locais e emitir o laudo oficial em `POST /reports`;
-- a sincronizacao do store e a emissao de laudo foram separadas: sincronizar dados nao gera laudo automaticamente;
-- os laudos oficiais ficam salvos em `technical_reports` e vinculados as pesagens em `technical_report_weighings`.
+Este documento descreve a arquitetura atual do DripTest como sistema operacional de coleta, calculo, consolidacao e emissao de laudos tecnicos de analise de drip.
 
-## Estrutura
+O sistema foi desenhado para operar em modo local/offline, com integracao incremental a um backend FastAPI e persistencia central em PostgreSQL, sem quebrar o fluxo de uso no chao de fabrica.
 
-```text
-backend-python/
-  app/
-    main.py
-    repositories.py
-    schemas.py
-    database.py
-    settings.py
-    security.py
-  requirements.txt
-  .env.example
-```
+## 2. Visao geral
 
-## Banco
+O DripTest hoje e composto por tres camadas principais:
 
-1. Crie um banco PostgreSQL chamado `driptest`.
-2. Execute o schema:
+1. frontend Web/PWA para operacao local e uso em navegador;
+2. backend FastAPI para autenticacao, sincronizacao e persistencia oficial;
+3. aplicativo Android com WebView que empacota a mesma aplicacao web para uso em APK.
 
-```bash
-psql -d driptest -f ../database/schema.sql
-```
-
-## Configuracao
-
-Copie `.env.example` para `.env` e ajuste:
+Arquitetura logica:
 
 ```text
-DRIP_DATABASE_URL=postgresql://postgres:password@db-host:5432/driptest
-DRIP_API_TOKEN=your-strong-api-token
-DRIP_CORS_ORIGINS=http://localhost:5500,http://127.0.0.1:5500,http://localhost:8000
-DRIP_AUTH_TOKEN_TTL_HOURS=8
-DRIP_BOOTSTRAP_ADMIN_NAME=Administrador DripTest
-DRIP_BOOTSTRAP_ADMIN_EMAIL=admin@driptest.local
-DRIP_BOOTSTRAP_ADMIN_PASSWORD=change-me
+Operador / Supervisor
+        |
+        v
+Web App DripTest (HTML + JS + localStorage + PWA)
+        |
+        | drip-api.js / drip-sync.js
+        v
+FastAPI Backend Python
+        |
+        v
+PostgreSQL
 ```
 
-Observacoes:
+Arquitetura de distribuicao:
 
-- Nunca commite `.env` no controle de versao.
-- `DRIP_DATABASE_URL` e obrigatorio.
-- `DRIP_API_TOKEN` e obrigatorio.
-- Quando `DRIP_BOOTSTRAP_ADMIN_EMAIL` e `DRIP_BOOTSTRAP_ADMIN_PASSWORD` estiverem preenchidos, o backend cria ou atualiza o primeiro usuario administrador na inicializacao.
+```text
+Navegador desktop/mobile ------> arquivos web do projeto
+                                  |-- localStorage
+                                  |-- service-worker
+                                  |-- manifest.webmanifest
 
-Production checklist:
+APK Android (WebView) ---------> android-offline/app/src/main/assets/www
+                                  |-- mesma base HTML/CSS/JS sincronizada
 
-- Defina `DRIP_DATABASE_URL` apontando para o banco de producao.
-- Defina `DRIP_API_TOKEN` com um token forte e rotacionavel.
-- Defina credenciais seguras para `DRIP_BOOTSTRAP_ADMIN_*`.
-- Configure `DRIP_CORS_ORIGINS` para as origens reais do front-end.
-- Rode testes e crie backups do banco antes do cutover.
-
-## Instalar e executar
-
-```bash
-cd backend-python
-python -m venv .venv
-.venv\Scripts\activate
-pip install -r requirements.txt
-uvicorn app.main:app --reload --port 8000
+Backend API -------------------> backend-python/app
+Banco relacional --------------> PostgreSQL via database/schema.sql
 ```
 
-## Endpoints atuais
+## 3. Principios arquiteturais
+
+### 3.1 Offline-first
+
+O fluxo operacional principal nao depende do backend para funcionar.
+
+Os dados de trabalho continuam sendo gravados localmente para garantir uso mesmo quando houver:
+
+- falta de rede;
+- indisponibilidade da API;
+- operacao em dispositivos isolados;
+- uso dentro do WebView Android.
+
+### 3.2 Integracao incremental
+
+O backend foi acoplado sem substituir de uma vez o armazenamento local.
+
+Na pratica:
+
+- a coleta operacional continua local;
+- a sincronizacao envia snapshots e registros para a API quando configurada;
+- o banco passa a ser a fonte oficial para historico, auditoria e laudos emitidos.
+
+### 3.3 Regra de negocio centralizada no frontend
+
+As regras de calculo e normalizacao usadas pelas telas devem ficar centralizadas em `drip-data.js`, evitando divergencia entre:
+
+- pesagem inicial;
+- pesagem final;
+- cronograma;
+- relatorios;
+- exportacao/importacao.
+
+## 4. Camadas do sistema
+
+### 4.1 Frontend Web/PWA
+
+O frontend e formado por paginas HTML especializadas, apoiadas por scripts compartilhados.
+
+Arquivos principais:
+
+- `index.html`: tela inicial e distribuicao de perfis/entrada.
+- `login.html`: captura dados operacionais da sessao, como monitor, lote, setor e data de fabricacao.
+- `DripTeste.html`: registro da pesagem inicial.
+- `DripSchedule.html`: cronograma e previsao dos tempos de analise.
+- `DripTestF.html`: registro da pesagem final.
+- `DripReports.html`: consolidacao, historico, relatorios e emissao de laudos.
+- `DripAbsorption.html`: testes complementares de absorcao.
+- `drip-data.js`: camada central de dados, normalizacao, calculos e consolidacao.
+- `drip-api.js`: cliente HTTP e gestao de configuracao/sessao da API.
+- `drip-sync.js`: montagem do snapshot local e envio para sincronizacao.
+- `drip-ui.js`: comportamento visual compartilhado.
+- `service-worker.js`: cache de recursos do PWA.
+- `manifest.webmanifest`: metadados de instalacao.
+
+Responsabilidades do frontend:
+
+- capturar dados operacionais;
+- calcular pesos, tempos e indicadores;
+- manter o store local;
+- gerar visoes de relatorio;
+- exportar/importar dados;
+- sincronizar com o backend quando habilitado.
+
+### 4.2 Camada de dados local
+
+O frontend usa `localStorage` como persistencia primaria de operacao.
+
+Chaves principais:
+
+- `driptest_store_v2`: store principal com pesagens e testes de absorcao;
+- `drip_user`: sessao operacional local com monitor, lote, setor/planta e fabricacao;
+- `driptest_api_config`: configuracao da API;
+- `driptest_auth_session`: sessao autenticada da API;
+- `driptest_pesagem_inicial_v1`: compatibilidade com legado.
+
+Estrutura funcional:
+
+- `initialRecords`: registros de pesagem inicial/final;
+- `absorptionTests`: testes complementares;
+- `updatedAt`: marcador local de atualizacao.
+
+### 4.3 Backend FastAPI
+
+O backend implementa a camada de servico e persistencia oficial.
+
+Arquivos principais:
+
+- `backend-python/app/main.py`: endpoints e bootstrap da aplicacao;
+- `backend-python/app/repositories.py`: operacoes de acesso a dados e regras de persistencia;
+- `backend-python/app/schemas.py`: contratos de entrada e saida;
+- `backend-python/app/database.py`: pool e conexao PostgreSQL;
+- `backend-python/app/security.py`: autenticacao por token tecnico e sessao de usuario;
+- `backend-python/app/settings.py`: configuracao por ambiente.
+
+Responsabilidades do backend:
+
+- validar disponibilidade da API;
+- autenticar usuarios;
+- receber snapshots do frontend;
+- persistir lotes, pesagens, testes e laudos;
+- reabrir/finalizar registros;
+- consolidar historico oficial para consulta.
+
+Endpoints atuais:
 
 ```text
 GET  /health
@@ -87,7 +170,7 @@ GET  /sync/pull
 
 GET  /lots
 POST /lots
-GET  /lots/{id}
+GET  /lots/{lot_id}
 
 GET  /weighings
 POST /weighings
@@ -99,90 +182,255 @@ POST /reports
 GET  /reports/{report_id}
 ```
 
-Observacao sobre laudos:
+### 4.4 Banco PostgreSQL
 
-- `POST /reports` aceita `lot_id` para um lote tecnico unico;
-- `POST /reports` tambem aceita `lot_ids` para emissao agregada quando o mesmo laudo precisa consolidar mais de um lote tecnico no banco.
+O PostgreSQL e a base relacional oficial do sistema.
 
-## Autenticacao
+Tabelas e estruturas principais:
 
-O backend aceita dois modos de autenticacao:
+- `plants`
+- `users`
+- `app_clients`
+- `production_lots`
+- `weighings`
+- `absorption_tests`
+- `technical_reports`
+- `technical_report_weighings`
+- `sync_batches`
+- `audit_logs`
+- `v_weighing_report_data`
+- `v_lot_summary`
 
-- `Authorization: Bearer <DRIP_API_TOKEN>` para integracoes tecnicas e sincronizacao de servico;
-- sessao assinada emitida por `POST /auth/login` para operacao humana e auditoria.
+Papel do banco:
 
-Payload esperado em `POST /auth/login`:
+- consolidar o historico oficial;
+- permitir rastreabilidade por lote, monitor e planta;
+- sustentar laudos tecnicos oficiais;
+- registrar sincronizacao e auditoria.
 
-```json
-{
-  "identifier": "admin@driptest.local",
-  "password": "change-me"
-}
-```
+### 4.5 Android WebView
 
-Resposta:
+O projeto `android-offline/` gera um APK nativo que embute a aplicacao web.
 
-```json
-{
-  "access_token": "token-assinado",
-  "token_type": "bearer",
-  "expires_in": 28800,
-  "user": {
-    "id": "uuid",
-    "name": "Administrador DripTest",
-    "email": "admin@driptest.local",
-    "role": "admin",
-    "plant_id": "uuid"
-  }
-}
-```
+Arquivos principais:
 
-## Integracao com o app Web
+- `android-offline/app/src/main/java/com/driptest/offline/MainActivity.java`
+- `android-offline/app/src/main/java/com/driptest/offline/DripNotificationReceiver.java`
+- `android-offline/app/src/main/assets/www/*`
+- `android-offline/sync-web-assets.ps1`
 
-O app Web ja possui:
+Papel da camada Android:
+
+- empacotar a interface web em um APK;
+- habilitar uso com `WebView`, `localStorage` e acesso a arquivos locais;
+- acionar intents externas para links HTTP/HTTPS, WhatsApp e marketplace;
+- suportar recursos nativos como notificacoes e compartilhamento de PDF.
+
+Observacao importante:
+
+- o `MainActivity` atual abre `file:///android_asset/www/index.html`;
+- os arquivos publicados dentro do APK precisam ser sincronizados a partir da raiz web com `android-offline/sync-web-assets.ps1`.
+
+## 5. Fluxos principais
+
+### 5.1 Fluxo operacional offline
 
 ```text
-drip-api.js
-drip-sync.js
+Operador
+  -> login.html define dados da sessao
+  -> DripTeste.html registra pesagem inicial
+  -> DripSchedule.html calcula agenda
+  -> DripTestF.html registra pesagem final
+  -> DripReports.html consolida resultados
+  -> localStorage guarda os dados localmente
 ```
 
-Configuracao esperada no navegador:
+Esse fluxo continua funcionando mesmo sem API configurada.
 
-```json
-{
-  "baseUrl": "http://localhost:8000",
-  "token": "",
-  "enabled": true
-}
+### 5.2 Fluxo de sincronizacao
+
+```text
+Frontend local
+  -> drip-sync.js monta snapshot
+  -> drip-api.js envia POST /sync/push
+  -> FastAPI converte e persiste no PostgreSQL
+  -> API retorna resultado de importacao
 ```
 
-Com isso:
+O snapshot contem:
 
-- `DripSync.pushLocalStore()` envia somente pesagens e testes locais para `POST /sync/push`;
-- `DripSync.pushLocalStore({ includeReport: true })` permite incluir o snapshot local do laudo quando esse comportamento for desejado;
-- a tela `DripReports.html` usa a API para sincronizar dados e emitir o laudo oficial por `POST /reports`.
+- metadados do app;
+- sessao do usuario local;
+- store com pesagens e testes;
+- laudo consolidado opcional.
 
-## Fluxo oficial de laudos
+### 5.3 Fluxo de laudo oficial
 
-Fluxo atual recomendado:
+```text
+DripReports.html
+  -> sincroniza dados locais
+  -> identifica lote(s) tecnico(s)
+  -> chama POST /reports
+  -> backend grava technical_reports
+  -> backend vincula pesagens em technical_report_weighings
+```
 
-1. sincronizar os dados locais de pesagem e testes;
-2. resolver no backend o(s) lote(s) tecnico(s) correspondente(s);
-3. emitir o laudo oficial em `POST /reports`;
-4. salvar o snapshot completo em `technical_reports.report_json`;
-5. salvar hash SHA-256 canonicamente calculado;
-6. registrar o relacionamento do laudo com as pesagens em `technical_report_weighings`.
+Esse fluxo separa:
 
-Esse fluxo reduz divergencias entre:
+- previa local do relatorio;
+- sincronizacao do store;
+- emissao oficial do laudo no banco.
 
-- laudo local de previa/PDF;
-- laudo oficial salvo no banco;
-- historico consultado pela API.
+### 5.4 Fluxo Android
 
-## Proximos passos recomendados
+```text
+APK Android
+  -> WebView carrega index.html dos assets
+  -> telas web usam os mesmos scripts do frontend
+  -> dados ficam no storage do WebView
+  -> API pode ser chamada via HTTP/HTTPS quando configurada
+  -> recursos nativos complementam PDF, compartilhamento e notificacoes
+```
 
-- conectar o front-end aos novos endpoints de login, finalizacao e emissao de laudo;
-- criar tela administrativa para configurar a API;
-- adicionar botao "Sincronizar agora";
-- criar migrations com Alembic quando o modelo estabilizar;
-- criar testes automatizados para regras de negocio e fluxos da API.
+## 6. Componentes de integracao
+
+### 6.1 `drip-data.js`
+
+E a principal camada de dominio no frontend.
+
+Responsabilidades:
+
+- criar e normalizar registros;
+- centralizar regras de calculo;
+- calcular tempo por faixa/interpolacao;
+- calcular perda/absorcao;
+- classificar indicadores de mercado;
+- consolidar dados para relatorios;
+- manter compatibilidade com dados legados.
+
+### 6.2 `drip-api.js`
+
+E a camada cliente de comunicacao com a API.
+
+Responsabilidades:
+
+- salvar configuracao da API;
+- salvar sessao autenticada;
+- montar headers HTTP;
+- anexar token tecnico ou sessao humana;
+- expor funcoes de consumo dos endpoints.
+
+### 6.3 `drip-sync.js`
+
+E a camada de sincronizacao do estado local.
+
+Responsabilidades:
+
+- ler o store local;
+- montar snapshot consistente;
+- incluir relatorio quando necessario;
+- enviar para a API sem acoplar a operacao das telas ao backend.
+
+## 7. Autenticacao e seguranca
+
+O backend suporta dois modelos de autenticacao:
+
+- token tecnico via `Authorization: Bearer <DRIP_API_TOKEN>`;
+- sessao de usuario emitida por `POST /auth/login`.
+
+Finalidade de cada modo:
+
+- token tecnico: integracoes de servico, sincronizacao e chamadas tecnicas;
+- sessao humana: operacao auditavel por usuario.
+
+Pontos de atencao:
+
+- o frontend continua apto a operar sem login remoto;
+- CORS deve ser configurado no backend para as origens reais;
+- o Android nao deve apontar para `127.0.0.1` quando a API estiver em outra maquina.
+
+## 8. Persistencia e consistencia
+
+O sistema trabalha hoje com dupla persistencia controlada:
+
+- persistencia local para continuidade operacional;
+- persistencia oficial no banco para rastreabilidade e historico.
+
+Consequencias arquiteturais:
+
+- o backend nao pode ser requisito para a coleta local;
+- falha de sincronizacao nao deve apagar dados do operador;
+- consolidacao de laudo oficial deve ocorrer no servidor para reduzir divergencia;
+- o frontend precisa continuar tolerante a indisponibilidade da API.
+
+## 9. Implantacao e ambientes
+
+### 9.1 Frontend Web
+
+Pode ser publicado como site estatico/PWA.
+
+Artefatos relevantes:
+
+- paginas HTML;
+- scripts JS compartilhados;
+- `service-worker.js`;
+- `manifest.webmanifest`;
+- `icons/`.
+
+### 9.2 Backend
+
+Executa como aplicacao Python com FastAPI e conexao PostgreSQL.
+
+Configuracoes centrais por ambiente:
+
+- `DRIP_DATABASE_URL`
+- `DRIP_API_TOKEN`
+- `DRIP_CORS_ORIGINS`
+- `DRIP_AUTH_TOKEN_TTL_HOURS`
+- `DRIP_BOOTSTRAP_ADMIN_NAME`
+- `DRIP_BOOTSTRAP_ADMIN_EMAIL`
+- `DRIP_BOOTSTRAP_ADMIN_PASSWORD`
+
+### 9.3 Android
+
+O APK precisa ser regenerado sempre que os assets web forem alterados e sincronizados.
+
+Processo resumido:
+
+1. alterar arquivos web na raiz do projeto;
+2. rodar `android-offline/sync-web-assets.ps1`;
+3. gerar novo APK em `android-offline/`.
+
+## 10. Decisoes arquiteturais atuais
+
+As decisoes mais importantes da arquitetura atual sao:
+
+- manter o frontend operacional de forma autonoma;
+- usar `drip-data.js` como fonte central das regras de negocio do frontend;
+- tratar o backend como camada oficial de persistencia, historico e laudos;
+- reaproveitar o mesmo frontend tanto no navegador quanto no APK Android;
+- adotar PostgreSQL como base relacional central;
+- preservar integracao incremental para evitar ruptura no processo operacional.
+
+## 11. Riscos e pontos de controle
+
+Pontos que exigem disciplina operacional e tecnica:
+
+- manter sincronizados os assets da raiz web e do APK;
+- evitar duplicacao de regra de negocio fora de `drip-data.js`;
+- garantir que laudo local e laudo oficial usem a mesma base de dados consolidada;
+- configurar corretamente a URL da API em dispositivos Android;
+- validar CORS, token tecnico e credenciais antes de uso em producao.
+
+## 12. Resumo executivo
+
+O DripTest e um sistema hibrido de operacao local com sincronizacao central.
+
+Sua arquitetura atual combina:
+
+- frontend Web/PWA orientado a continuidade operacional;
+- backend FastAPI para servicos e persistencia oficial;
+- banco PostgreSQL para historico, rastreabilidade e laudos;
+- empacotamento Android via WebView para uso movel com a mesma base web.
+
+Essa arquitetura permite evolucao gradual para um ambiente mais controlado sem perder a robustez do fluxo offline que sustenta a operacao no dia a dia.
