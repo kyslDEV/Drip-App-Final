@@ -1,0 +1,515 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="theme-color" content="#0f6b5f" />
+  <link rel="manifest" href="manifest.webmanifest" />
+  <link rel="icon" href="icons/icon.svg" type="image/svg+xml" />
+  <link rel="apple-touch-icon" href="icons/icon-192.png" />
+  <link rel="stylesheet" href="drip-theme.css?v=ui-2026-4" />
+  <title>Entrada - DripTest</title>
+  <style>
+    :root {
+      --ink: #152421;
+      --muted: #64736f;
+      --line: #d8e3df;
+      --paper: #ffffff;
+      --soft: #f6faf8;
+      --green: #0f6b5f;
+      --green-strong: #084c43;
+      --amber: #d99028;
+      --danger: #b42335;
+      --radius: 12px;
+      --shadow: 0 22px 55px rgba(18, 36, 33, 0.14);
+      font-family: Inter, system-ui, -apple-system, "Segoe UI", Roboto, Arial, sans-serif;
+    }
+
+    * { box-sizing: border-box; }
+    html { min-height: 100%; background: #edf5f2; }
+    body {
+      min-height: 100vh;
+      margin: 0;
+      color: var(--ink);
+      background:
+        radial-gradient(circle at 14% 18%, rgba(15, 107, 95, 0.18), transparent 28%),
+        radial-gradient(circle at 92% 12%, rgba(217, 144, 40, 0.15), transparent 24%),
+        linear-gradient(135deg, #f6f8ef 0%, #eaf5f3 48%, #f8f4ea 100%);
+      -webkit-font-smoothing: antialiased;
+    }
+
+    button, input, select, a { font: inherit; }
+    button:focus-visible, a:focus-visible, input:focus-visible, select:focus-visible {
+      outline: 3px solid rgba(15, 107, 95, 0.22);
+      outline-offset: 2px;
+    }
+
+    .page {
+      width: min(100% - 24px, 1120px);
+      min-height: 100vh;
+      margin: 0 auto;
+      padding: 22px 0 30px;
+      display: grid;
+      align-content: center;
+      gap: 16px;
+    }
+
+    .topbar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 12px;
+      padding: 12px 14px;
+      border: 1px solid rgba(141, 160, 153, 0.28);
+      border-radius: var(--radius);
+      background: rgba(255, 255, 255, 0.78);
+      box-shadow: var(--shadow);
+      backdrop-filter: blur(14px) saturate(130%);
+    }
+
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .logo {
+      width: 42px;
+      height: 42px;
+      display: grid;
+      place-items: center;
+      border-radius: 11px;
+      color: #fff;
+      background: conic-gradient(from 160deg, #0f6b5f, #23a084, #f0b24f, #0f6b5f);
+      font-weight: 900;
+      box-shadow: 0 14px 28px rgba(15, 107, 95, 0.2);
+    }
+
+    h1, h2, p { margin: 0; }
+    .brand-title { font-size: 14px; font-weight: 900; }
+    .brand-sub { margin-top: 2px; color: var(--muted); font-size: 12px; }
+
+    .button-link, button {
+      min-height: 40px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      padding: 0 14px;
+      border: 1px solid transparent;
+      border-radius: 10px;
+      cursor: pointer;
+      text-decoration: none;
+      font-size: 14px;
+      font-weight: 900;
+      white-space: nowrap;
+    }
+
+    .ghost {
+      color: var(--green);
+      background: #fff;
+      border-color: rgba(15, 107, 95, 0.24);
+    }
+
+    .primary {
+      color: #fff;
+      background: var(--green);
+    }
+
+    .primary:hover { background: var(--green-strong); }
+
+    .hero {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) minmax(360px, 460px);
+      gap: 16px;
+      align-items: stretch;
+    }
+
+    .presentation,
+    .login-card {
+      border: 1px solid rgba(141, 160, 153, 0.28);
+      border-radius: var(--radius);
+      background: rgba(255, 255, 255, 0.84);
+      box-shadow: var(--shadow);
+      backdrop-filter: blur(14px) saturate(130%);
+    }
+
+    .presentation {
+      min-height: 420px;
+      padding: clamp(20px, 3.5vw, 34px);
+      display: grid;
+      align-content: space-between;
+      overflow: hidden;
+      position: relative;
+    }
+
+    .presentation::after {
+      content: "";
+      position: absolute;
+      right: -80px;
+      bottom: -100px;
+      width: 270px;
+      height: 270px;
+      border-radius: 999px;
+      background: radial-gradient(circle, rgba(15, 107, 95, 0.2), transparent 64%);
+      pointer-events: none;
+    }
+
+    .eyebrow {
+      color: var(--green);
+      font-size: 11px;
+      font-weight: 900;
+      letter-spacing: .15em;
+      text-transform: uppercase;
+    }
+
+    h1 {
+      max-width: 360px;
+      margin-top: 10px;
+      color: #17302c;
+      font-size: clamp(24px, 3vw, 34px);
+      line-height: 1.08;
+      letter-spacing: -.02em;
+    }
+
+    .lead {
+      max-width: 440px;
+      margin-top: 12px;
+      color: #51635f;
+      font-size: 13px;
+      line-height: 1.4;
+    }
+
+    .steps {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 10px;
+      margin-top: 18px;
+    }
+
+    .step {
+      min-height: 78px;
+      padding: 11px;
+      border: 1px solid rgba(15, 107, 95, 0.13);
+      border-radius: 12px;
+      background: rgba(255, 255, 255, 0.6);
+    }
+
+    .step b { display: block; color: #17302c; font-size: 13px; }
+    .step span { display: block; margin-top: 4px; color: var(--muted); font-size: 11px; line-height: 1.3; }
+
+    .trust {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+      margin-top: 18px;
+    }
+
+    .trust span {
+      min-height: 28px;
+      display: inline-flex;
+      align-items: center;
+      padding: 0 10px;
+      border-radius: 999px;
+      color: #36514b;
+      background: #edf7f3;
+      font-size: 11px;
+      font-weight: 900;
+    }
+
+    .login-card {
+      padding: 20px;
+      display: grid;
+      gap: 14px;
+      align-content: start;
+    }
+
+    .login-head h2 { color: #17302c; font-size: 20px; }
+    .login-head p {
+      margin-top: 6px;
+      color: var(--muted);
+      font-size: 12px;
+      line-height: 1.45;
+    }
+
+    .form-grid {
+      display: grid;
+      gap: 12px;
+    }
+
+    .field { min-width: 0; }
+    label {
+      display: block;
+      margin-bottom: 6px;
+      color: #4e625d;
+      font-size: 11px;
+      font-weight: 900;
+      text-transform: uppercase;
+      letter-spacing: .04em;
+    }
+
+    input,
+    select {
+      width: 100%;
+      min-height: 43px;
+      border: 1px solid var(--line);
+      border-radius: 10px;
+      padding: 0 12px;
+      color: var(--ink);
+      background: var(--soft);
+      font-size: 14px;
+    }
+
+    input::placeholder { color: #9aa8a3; }
+
+    .two-cols {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+    }
+
+    .actions {
+      display: grid;
+      grid-template-columns: 1fr auto;
+      gap: 10px;
+      margin-top: 2px;
+    }
+
+    .status-message {
+      display: none;
+      padding: 10px 11px;
+      border: 1px solid transparent;
+      border-radius: 10px;
+      font-size: 13px;
+      line-height: 1.45;
+    }
+
+    .status-message.success {
+      color: #176b40;
+      background: #e8f7ee;
+      border-color: rgba(23, 107, 64, 0.14);
+    }
+
+    .status-message.error {
+      color: #952535;
+      background: #fff0f2;
+      border-color: rgba(180, 35, 53, 0.16);
+    }
+
+    .fineprint {
+      color: var(--muted);
+      font-size: 11px;
+      line-height: 1.4;
+    }
+
+    @media (max-width: 900px) {
+      .page { align-content: start; padding-top: 12px; }
+      .hero { grid-template-columns: 1fr; }
+      .presentation { min-height: auto; }
+      .steps { grid-template-columns: 1fr; }
+    }
+
+    @media (max-width: 620px) {
+      .page { width: min(100% - 16px, 1120px); }
+      .topbar { align-items: flex-start; flex-direction: column; }
+      .topbar .button-link { width: 100%; }
+      h1 { font-size: clamp(24px, 8vw, 34px); }
+      .login-card { padding: 16px; }
+      .two-cols, .actions { grid-template-columns: 1fr; }
+      .actions > * { width: 100%; }
+    }
+  </style>
+</head>
+<body>
+  <div class="page">
+    <header class="topbar" role="banner" aria-label="Cabecalho DripTest">
+      <div class="brand">
+        <div class="logo" aria-hidden="true">DT</div>
+        <div>
+          <p class="brand-title">DripTest</p>
+          <p class="brand-sub">Analise de gotejamento</p>
+        </div>
+      </div>
+      <a href="index.html" class="button-link ghost">Trocar perfil</a>
+    </header>
+
+    <main class="hero">
+      <section class="presentation" aria-labelledby="presentationTitle">
+        <div>
+          <p class="eyebrow">Inicio</p>
+          <h1 id="presentationTitle">Identifique o lote.</h1>
+          <p class="lead">Entrada da análise e rastreabilidade.</p>
+
+          <div class="steps" aria-label="Fluxo resumido">
+            <div class="step"><b>1. Identificar</b><span>Monitor, setor e lote.</span></div>
+            <div class="step"><b>2. Pesar</b><span>Calculo e agenda.</span></div>
+            <div class="step"><b>3. Emitir</b><span>Laudo e planilha.</span></div>
+          </div>
+        </div>
+
+        <div class="trust">
+          <span>Offline</span>
+          <span>Laudo PDF</span>
+          <span>Planilha</span>
+          <span>Supervisor</span>
+        </div>
+      </section>
+
+      <section class="login-card" aria-labelledby="loginTitle">
+        <div class="login-head">
+          <h2 id="loginTitle">Entrada</h2>
+          <p>Informe os dados do lote.</p>
+        </div>
+
+        <form id="loginForm" class="form-grid" novalidate>
+          <div class="field">
+            <label for="monitorName">Monitor(a)</label>
+            <input id="monitorName" name="monitorName" type="text" required placeholder="Ex: Ana" />
+          </div>
+
+          <div class="field">
+            <label for="sectorName">Setor da analise</label>
+            <input id="sectorName" name="sectorName" type="text" required placeholder="Ex: Controle de qualidade" />
+          </div>
+
+          <div class="two-cols">
+            <div class="field">
+              <label for="shift">Turno</label>
+              <select id="shift" name="shift" required aria-label="Turno da equipe">
+                <option value="">Selecione</option>
+                <option value="1° Manhã">1° Manhã</option>
+                <option value="2° Noite">2° Noite</option>
+              </select>
+            </div>
+
+            <div class="field">
+              <label for="fabDate">Fabricacao</label>
+              <input id="fabDate" name="fabDate" type="date" required />
+            </div>
+          </div>
+
+          <div class="field">
+            <label for="lot">Lote</label>
+            <input id="lot" name="lot" type="text" required placeholder="Ex: 006" />
+          </div>
+
+          <div class="actions">
+            <button class="primary" type="submit">Iniciar pesagens</button>
+            <button id="clearBtn" class="ghost" type="button">Limpar</button>
+          </div>
+
+          <div id="saveMsg" class="status-message success" role="status">Dados salvos. Abrindo pesagem...</div>
+          <div id="errorMsg" class="status-message error" role="alert"></div>
+        </form>
+
+        <p class="fineprint">Dados salvos para esta operacao.</p>
+      </section>
+    </main>
+  </div>
+
+  <script src="drip-ui.js?v=ui-2026-4"></script>
+  <script>
+    (function () {
+      const STORAGE_KEY = 'drip_user';
+      const form = document.getElementById('loginForm');
+      const monitorName = document.getElementById('monitorName');
+      const sectorName = document.getElementById('sectorName');
+      const shift = document.getElementById('shift');
+      const fabDate = document.getElementById('fabDate');
+      const lot = document.getElementById('lot');
+      const clearBtn = document.getElementById('clearBtn');
+      const saveMsg = document.getElementById('saveMsg');
+      const errorMsg = document.getElementById('errorMsg');
+      const params = new URLSearchParams(window.location.search);
+
+      function getNextDestination() {
+        const next = (params.get('next') || '').trim();
+        if (!next) return 'DripTeste.html';
+        if (/^[a-z]+:/i.test(next)) return 'DripTeste.html';
+        if (next.startsWith('//')) return 'DripTeste.html';
+        return next;
+      }
+
+      function load() {
+        try {
+          const raw = localStorage.getItem(STORAGE_KEY);
+          if (!raw) return;
+
+          const obj = JSON.parse(raw);
+          monitorName.value = obj.monitorName || '';
+          sectorName.value = obj.sectorName || obj.plantName || obj.setor || '';
+          shift.value = obj.shift || obj.turno || '';
+          fabDate.value = obj.fabDate || '';
+          lot.value = obj.lot || '';
+        } catch (e) {
+          console.warn('Erro ao ler storage', e);
+        }
+      }
+
+      function validate() {
+        errorMsg.style.display = 'none';
+
+        if (!monitorName.value.trim()) return 'Informe o nome do(a) monitor(a).';
+        if (!sectorName.value.trim()) return 'Informe o setor da analise.';
+        if (!shift.value) return 'Selecione o turno da equipe.';
+        if (!lot.value.trim()) return 'Informe o lote.';
+        if (!fabDate.value) return 'Informe a data de fabricacao.';
+
+        return null;
+      }
+
+      function save(ev) {
+        ev.preventDefault();
+        saveMsg.style.display = 'none';
+
+        const err = validate();
+        if (err) {
+          errorMsg.textContent = err;
+          errorMsg.style.display = 'block';
+          return;
+        }
+
+        const obj = {
+          monitorName: monitorName.value.trim(),
+          sectorName: sectorName.value.trim(),
+          plantName: sectorName.value.trim(),
+          shift: shift.value,
+          turno: shift.value,
+          fabDate: fabDate.value,
+          lot: lot.value.trim()
+        };
+
+        try {
+          localStorage.setItem(STORAGE_KEY, JSON.stringify(obj));
+          errorMsg.style.display = 'none';
+          saveMsg.style.display = 'block';
+
+          setTimeout(() => {
+            const dest = getNextDestination();
+            window.location.href = dest;
+          }, 650);
+        } catch (e) {
+          console.warn('Erro ao salvar configuracao', e);
+          errorMsg.textContent = 'Erro ao salvar configuracao.';
+          errorMsg.style.display = 'block';
+        }
+      }
+
+      function clearStorage() {
+        localStorage.removeItem(STORAGE_KEY);
+        monitorName.value = '';
+        sectorName.value = '';
+        shift.value = '';
+        fabDate.value = '';
+        lot.value = '';
+        saveMsg.style.display = 'none';
+        errorMsg.style.display = 'none';
+      }
+
+      form.addEventListener('submit', save);
+      clearBtn.addEventListener('click', clearStorage);
+      load();
+    })();
+  </script>
+</body>
+</html>

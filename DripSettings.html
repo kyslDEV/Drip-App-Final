@@ -1,0 +1,586 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="theme-color" content="#1663d8" />
+  <meta name="description" content="DripTest - conexão com banco e gestão de dados" />
+  <link rel="manifest" href="manifest.webmanifest" />
+  <link rel="icon" href="icons/icon.svg" type="image/svg+xml" />
+  <link rel="stylesheet" href="drip-theme.css?v=ui-2026-3" />
+  <title>DripTest - Banco & Dados</title>
+  <style>
+    :root {
+      --bg: #eef3f8;
+      --surface: #ffffff;
+      --surface-2: #f8fbff;
+      --text: #172033;
+      --muted: #667085;
+      --line: #dbe6f2;
+      --accent: #1663d8;
+      --accent-strong: #0f4eb0;
+      --danger: #c83f49;
+      --shadow: 0 10px 26px rgba(32, 47, 72, 0.09);
+      --radius: 10px;
+      font-family: Inter, system-ui, -apple-system, "Segoe UI", Roboto, Arial, sans-serif;
+    }
+
+    * { box-sizing: border-box; }
+    body {
+      min-height: 100vh;
+      margin: 0;
+      color: var(--text);
+      background: linear-gradient(180deg, rgba(255,255,255,0.82), rgba(238,243,248,0.96) 48%, #ffffff 100%);
+    }
+
+    button, a, input, textarea { font: inherit; }
+    .page { width: min(100% - 24px, 1180px); margin: 0 auto; padding: 20px 0; }
+    .topbar, .panel, .card {
+      background: var(--surface);
+      border: 1px solid rgba(219, 230, 242, 0.76);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+    }
+
+    .topbar {
+      display: grid;
+      grid-template-columns: auto 1fr auto;
+      align-items: center;
+      gap: 16px;
+      padding: 14px 16px;
+      margin-bottom: 12px;
+    }
+
+    .logo {
+      width: 50px;
+      height: 50px;
+      border-radius: 12px;
+      background: linear-gradient(135deg, var(--accent), #0bb5d8);
+      display: grid;
+      place-items: center;
+      color: #fff;
+      font-size: 18px;
+      font-weight: 800;
+      box-shadow: 0 10px 20px rgba(22, 99, 216, 0.18);
+    }
+
+    h1, h2, h3 { margin: 0; }
+    .subtitle { margin: 4px 0 0; color: var(--muted); font-size: 14px; }
+    .header-actions, .toolbar, .actions {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      justify-content: flex-end;
+      flex-wrap: wrap;
+    }
+
+    .panel { padding: 16px; }
+    .grid { display: grid; grid-template-columns: 0.92fr 1.08fr; gap: 12px; }
+    .stack { display: grid; gap: 12px; }
+    .card { padding: 16px; }
+    .helper-copy {
+      margin: 0 0 14px;
+      padding: 12px 14px;
+      border-radius: 14px;
+      background: rgba(22, 99, 216, 0.08);
+      border: 1px solid rgba(22, 99, 216, 0.16);
+      color: #234;
+      line-height: 1.45;
+    }
+
+    button, .button-link {
+      min-height: 40px;
+      border-radius: 8px;
+      border: 1px solid transparent;
+      padding: 0 12px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      cursor: pointer;
+      text-decoration: none;
+      font-weight: 700;
+      white-space: nowrap;
+      transition: background 160ms ease, border-color 160ms ease, transform 160ms ease;
+    }
+
+    button:hover, .button-link:hover { transform: translateY(-1px); }
+    .primary { background: var(--accent); color: #fff; }
+    .primary:hover { background: var(--accent-strong); }
+    .ghost { color: var(--accent); background: #fff; border-color: rgba(22, 99, 216, 0.22); }
+    .danger { color: #fff; background: var(--danger); }
+    .field { display: grid; gap: 6px; margin-top: 12px; }
+    label { font-size: 13px; font-weight: 800; color: var(--muted); }
+    input, textarea {
+      width: 100%;
+      border: 1px solid var(--line);
+      border-radius: 10px;
+      padding: 11px 12px;
+      background: #fff;
+      color: var(--text);
+    }
+
+    textarea {
+      min-height: 160px;
+      resize: vertical;
+      font-family: Consolas, "Courier New", monospace;
+      font-size: 12px;
+    }
+
+    .switch-row {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin-top: 12px;
+      color: var(--muted);
+      font-weight: 700;
+    }
+
+    .switch-row input { width: auto; }
+    .status-banner {
+      margin-top: 12px;
+      padding: 12px 14px;
+      border-radius: 10px;
+      border: 1px solid var(--line);
+      background: #f7faff;
+      color: #35516d;
+      font-size: 13px;
+      line-height: 1.5;
+    }
+
+    .status-banner.is-ok {
+      background: #eaf8f0;
+      border-color: rgba(30, 123, 69, 0.18);
+      color: #1e7b45;
+    }
+
+    .status-banner.is-warn {
+      background: #fff7e8;
+      border-color: rgba(154, 91, 0, 0.18);
+      color: #9a5b00;
+    }
+
+    .status-banner.is-error {
+      background: #fff1f2;
+      border-color: rgba(200, 63, 73, 0.18);
+      color: #a9313a;
+    }
+
+    .stats { display: grid; grid-template-columns: repeat(4, minmax(120px, 1fr)); gap: 10px; margin-top: 12px; }
+    .stat { padding: 14px; border: 1px solid var(--line); border-radius: 12px; background: var(--surface-2); }
+    .stat-label { display: block; color: var(--muted); font-size: 12px; font-weight: 800; text-transform: uppercase; }
+    .stat-value { display: block; margin-top: 6px; font-size: 20px; font-weight: 800; }
+    .list { display: grid; gap: 10px; margin-top: 12px; }
+    .list-item { padding: 12px 14px; background: #fff; border: 1px solid rgba(219, 230, 242, 0.76); border-radius: 10px; }
+    .list-item strong { display: block; margin-bottom: 4px; }
+    .list-item span { color: var(--muted); font-size: 13px; line-height: 1.45; }
+    .tag-row { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 10px; }
+    .tag {
+      display: inline-flex;
+      align-items: center;
+      min-height: 28px;
+      padding: 0 10px;
+      border-radius: 999px;
+      background: rgba(22, 99, 216, 0.08);
+      color: var(--muted);
+      font-size: 12px;
+      font-weight: 800;
+    }
+
+    .mobile-tabbar, .mobile-tabbar-spacer { display: none; }
+
+    @media (max-width: 900px) {
+      .topbar, .grid, .stats { grid-template-columns: 1fr; }
+      .header-actions { justify-content: flex-start; }
+    }
+  </style>
+</head>
+<body>
+  <div class="page">
+    <header class="topbar" role="banner" aria-label="Cabeçalho DripTest">
+      <div class="logo" aria-hidden="true">DT</div>
+      <div>
+        <h1>DripTest</h1>
+        <p class="subtitle">Banco & Dados</p>
+      </div>
+      <div class="header-actions">
+        <a href="DripTeste.html" class="button-link ghost">Inicial</a>
+        <a href="DripTestF.html" class="button-link ghost">Final</a>
+        <a href="DripSchedule.html" class="button-link ghost">Agenda</a>
+        <a href="DripReports.html" class="button-link ghost">Laudos</a>
+      </div>
+    </header>
+
+    <main class="panel" role="main" aria-labelledby="settingsTitle">
+      <div class="toolbar">
+        <div>
+          <h2 id="settingsTitle">Conexão com banco e gestão dos dados</h2>
+        </div>
+        <div class="actions">
+          <button id="refreshLocalBtn" class="ghost" type="button">Atualizar local</button>
+          <button id="loadBankBtn" class="primary" type="button">Buscar no banco</button>
+        </div>
+      </div>
+
+      <p class="helper-copy">Use esta tela para ligar o app ao backend, testar a API, sincronizar os dados salvos no aparelho e consultar o que já está no banco central.</p>
+      <div id="statusBanner" class="status-banner is-warn" role="status">Verificando configuração da API...</div>
+
+      <div class="grid" style="margin-top:12px;">
+        <section class="card" aria-labelledby="connectionTitle">
+          <h3 id="connectionTitle">Configuração da API</h3>
+          <div class="field">
+            <label for="baseUrl">URL da API</label>
+            <input id="baseUrl" type="url" inputmode="url" placeholder="Ex: http://192.168.0.10:8000 ou https://api.suaempresa.com" />
+          </div>
+          <div class="field">
+            <label for="apiToken">Token técnico</label>
+            <input id="apiToken" type="password" autocomplete="off" placeholder="Token da API, quando não usar login" />
+          </div>
+          <label class="switch-row">
+            <input id="apiEnabled" type="checkbox" />
+            Ativar sincronização com banco neste dispositivo
+          </label>
+          <div class="actions" style="justify-content:flex-start;margin-top:14px;">
+            <button id="saveConfigBtn" class="primary" type="button">Salvar conexão</button>
+            <button id="testApiBtn" class="ghost" type="button">Testar API</button>
+            <button id="clearConfigBtn" class="danger" type="button">Desativar</button>
+          </div>
+
+          <div class="field">
+            <label for="loginId">Login do backend</label>
+            <input id="loginId" type="text" autocomplete="username" placeholder="Ex: admin@driptest.local" />
+          </div>
+          <div class="field">
+            <label for="loginPassword">Senha</label>
+            <input id="loginPassword" type="password" autocomplete="current-password" placeholder="Senha do usuário" />
+          </div>
+          <div class="actions" style="justify-content:flex-start;margin-top:14px;">
+            <button id="loginBtn" class="ghost" type="button">Entrar na API</button>
+            <button id="logoutBtn" class="ghost" type="button">Sair da API</button>
+          </div>
+          <div id="sessionInfo" class="tag-row" aria-live="polite"></div>
+        </section>
+
+        <div class="stack">
+          <section class="card" aria-labelledby="localTitle">
+            <h3 id="localTitle">Dados salvos no aparelho</h3>
+            <div class="stats">
+              <div class="stat"><span class="stat-label">Iniciais</span><span class="stat-value" id="localInitial">0</span></div>
+              <div class="stat"><span class="stat-label">Finalizadas</span><span class="stat-value" id="localFinal">0</span></div>
+              <div class="stat"><span class="stat-label">Pendentes</span><span class="stat-value" id="localPending">0</span></div>
+              <div class="stat"><span class="stat-label">Lotes</span><span class="stat-value" id="localLots">0</span></div>
+            </div>
+            <div class="actions" style="justify-content:flex-start;margin-top:14px;">
+              <button id="syncBtn" class="primary" type="button">Sincronizar local</button>
+              <button id="copySnapshotBtn" class="ghost" type="button">Copiar JSON local</button>
+              <button id="showSnapshotBtn" class="ghost" type="button">Ver JSON</button>
+            </div>
+            <textarea id="snapshotOutput" readonly placeholder="O JSON local aparecerá aqui quando você tocar em Ver JSON."></textarea>
+          </section>
+
+          <section class="card" aria-labelledby="bankSummaryTitle">
+            <h3 id="bankSummaryTitle">Resumo do banco</h3>
+            <div class="stats">
+              <div class="stat"><span class="stat-label">Lotes</span><span class="stat-value" id="bankLots">-</span></div>
+              <div class="stat"><span class="stat-label">Pesagens</span><span class="stat-value" id="bankWeighings">-</span></div>
+              <div class="stat"><span class="stat-label">Laudos</span><span class="stat-value" id="bankReports">-</span></div>
+              <div class="stat"><span class="stat-label">Servidor</span><span class="stat-value" id="serverState">-</span></div>
+            </div>
+          </section>
+        </div>
+      </div>
+
+      <div class="grid" style="margin-top:12px;">
+        <section class="card" aria-labelledby="lotsTitle">
+          <h3 id="lotsTitle">Lotes no banco</h3>
+          <div id="lotsList" class="list"></div>
+        </section>
+        <section class="card" aria-labelledby="weighingsTitle">
+          <h3 id="weighingsTitle">Pesagens no banco</h3>
+          <div id="weighingsList" class="list"></div>
+        </section>
+      </div>
+
+      <section class="card" aria-labelledby="reportsTitle" style="margin-top:12px;">
+        <h3 id="reportsTitle">Laudos no banco</h3>
+        <div id="reportsList" class="list"></div>
+      </section>
+    </main>
+  </div>
+
+  <nav class="mobile-tabbar" aria-label="Navegação principal">
+    <a href="DripTeste.html">Inicial</a>
+    <a href="DripTestF.html">Final</a>
+    <a href="DripSchedule.html">Agenda</a>
+    <a href="DripReports.html">Laudos</a>
+    <a class="active" href="DripSettings.html">Banco</a>
+  </nav>
+  <div class="mobile-tabbar-spacer" aria-hidden="true"></div>
+
+  <script src="drip-data.js?v=report-accents-3"></script>
+  <script src="drip-api.js"></script>
+  <script src="drip-sync.js"></script>
+  <script src="drip-ui.js?v=ui-2026-3"></script>
+  <script>
+    const baseUrlEl = document.getElementById('baseUrl');
+    const apiTokenEl = document.getElementById('apiToken');
+    const apiEnabledEl = document.getElementById('apiEnabled');
+    const statusBanner = document.getElementById('statusBanner');
+    const sessionInfo = document.getElementById('sessionInfo');
+    const snapshotOutput = document.getElementById('snapshotOutput');
+    const localInitial = document.getElementById('localInitial');
+    const localFinal = document.getElementById('localFinal');
+    const localPending = document.getElementById('localPending');
+    const localLots = document.getElementById('localLots');
+    const bankLots = document.getElementById('bankLots');
+    const bankWeighings = document.getElementById('bankWeighings');
+    const bankReports = document.getElementById('bankReports');
+    const serverState = document.getElementById('serverState');
+    const lotsList = document.getElementById('lotsList');
+    const weighingsList = document.getElementById('weighingsList');
+    const reportsList = document.getElementById('reportsList');
+
+    function setStatus(message, tone) {
+      statusBanner.textContent = message;
+      statusBanner.className = 'status-banner';
+      statusBanner.classList.add(tone === 'ok' ? 'is-ok' : tone === 'error' ? 'is-error' : 'is-warn');
+    }
+
+    function formatDate(value) {
+      const date = value ? new Date(value) : null;
+      return date && !Number.isNaN(date.getTime())
+        ? date.toLocaleString('pt-BR', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' })
+        : '-';
+    }
+
+    function escapeHtml(value) {
+      return String(value == null ? '' : value)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#039;');
+    }
+
+    function renderEmpty(container, message) {
+      container.innerHTML = `<div class="list-item"><span>${escapeHtml(message)}</span></div>`;
+    }
+
+    function item(title, body) {
+      const div = document.createElement('div');
+      div.className = 'list-item';
+      div.innerHTML = `<strong>${escapeHtml(title)}</strong><span>${escapeHtml(body)}</span>`;
+      return div;
+    }
+
+    function loadConfigForm() {
+      const config = DripApi.getConfig();
+      baseUrlEl.value = config.baseUrl || '';
+      apiTokenEl.value = config.token || '';
+      apiEnabledEl.checked = Boolean(config.enabled);
+      renderSession();
+    }
+
+    function renderSession() {
+      const session = DripApi.getSession();
+      const config = DripApi.getConfig();
+      const parts = [];
+      parts.push(`<span class="tag">${config.enabled && config.baseUrl ? 'API ativa' : 'Modo local'}</span>`);
+      if (config.baseUrl) parts.push(`<span class="tag">${escapeHtml(config.baseUrl)}</span>`);
+      if (session && session.accessToken) {
+        const user = session.user || {};
+        parts.push(`<span class="tag">Sessão: ${escapeHtml(user.name || user.email || 'usuário conectado')}</span>`);
+      } else if (config.token) {
+        parts.push('<span class="tag">Token técnico salvo</span>');
+      } else {
+        parts.push('<span class="tag">Sem autenticação da API</span>');
+      }
+      sessionInfo.innerHTML = parts.join('');
+    }
+
+    function refreshLocal() {
+      const report = DripData.buildReportData();
+      localInitial.textContent = String(report.totals.initialRecords || 0);
+      localFinal.textContent = String(report.totals.finalizedRecords || 0);
+      localPending.textContent = String(report.totals.pendingRecords || 0);
+      localLots.textContent = String(report.totals.lots || 0);
+      if (DripApi.isEnabled()) {
+        setStatus('API configurada. Você pode sincronizar o aparelho e consultar o banco central.', 'ok');
+      } else {
+        setStatus('Modo local ativo. Os dados aparecem aqui, mas ainda não sobem para o banco.', 'warn');
+      }
+    }
+
+    function buildSnapshotText() {
+      return JSON.stringify(DripSync.buildLocalSnapshot({ includeReport: true }), null, 2);
+    }
+
+    async function testApi() {
+      if (!DripApi.isEnabled()) {
+        setStatus('Ative a API e informe a URL antes de testar a conexão.', 'warn');
+        return;
+      }
+      setStatus('Testando conexão com a API...', 'warn');
+      const health = await DripApi.getHealth();
+      serverState.textContent = health && health.database === 'ok' ? 'OK' : '-';
+      setStatus(`API conectada: ${health.app || 'DripTest API'} / banco ${health.database || '-'}.`, 'ok');
+    }
+
+    async function syncLocal() {
+      setStatus('Enviando dados locais para o banco central...', 'warn');
+      const result = await DripSync.pushLocalStore({ includeReport: false });
+      if (result && result.skipped) {
+        setStatus('API não configurada. Nada foi enviado ao banco.', 'warn');
+        return;
+      }
+      const imported = result.imported || {};
+      setStatus(`Sincronização concluída. Lotes: ${imported.lots || 0}, pesagens: ${imported.weighings || 0}, testes: ${imported.absorptionTests || 0}.`, 'ok');
+      await loadBankData();
+    }
+
+    function renderLots(rows) {
+      lotsList.replaceChildren();
+      if (!rows.length) {
+        renderEmpty(lotsList, 'Nenhum lote encontrado no banco.');
+        return;
+      }
+      rows.slice(0, 12).forEach((row) => {
+        lotsList.appendChild(item(
+          `${row.lot_code || row.lote || '-'} | ${row.product_brand || row.species || '-'}`,
+          `Fabricação ${row.fabrication_date || '-'} | Status ${row.status || '-'} | Pesagens ${row.weighing_count ?? row.total_weighings ?? '-'} | Atualizado ${formatDate(row.updated_at)}`
+        ));
+      });
+    }
+
+    function renderWeighings(rows) {
+      weighingsList.replaceChildren();
+      if (!rows.length) {
+        renderEmpty(weighingsList, 'Nenhuma pesagem encontrada no banco.');
+        return;
+      }
+      rows.slice(0, 12).forEach((row) => {
+        weighingsList.appendChild(item(
+          `${row.lot_code || '-'} | ${row.species || '-'}`,
+          `Bruto ${row.initial_gross_g ?? '-'} g | Líquido inicial ${row.initial_net_g ?? '-'} g | Final ${row.final_net_g ?? '-'} g | Status ${row.status || '-'}`
+        ));
+      });
+    }
+
+    function renderReports(rows) {
+      reportsList.replaceChildren();
+      if (!rows.length) {
+        renderEmpty(reportsList, 'Nenhum laudo encontrado no banco.');
+        return;
+      }
+      rows.slice(0, 12).forEach((row) => {
+        reportsList.appendChild(item(
+          row.report_number || row.title || 'Laudo sem número',
+          `Status ${row.status || '-'} | Emitido ${formatDate(row.issued_at || row.created_at)} | Atualizado ${formatDate(row.updated_at)}`
+        ));
+      });
+    }
+
+    async function loadBankData() {
+      if (!DripApi.isEnabled()) {
+        setStatus('Ative a API para buscar dados do banco central.', 'warn');
+        return;
+      }
+      setStatus('Consultando lotes, pesagens e laudos no banco...', 'warn');
+      const [lots, weighings, reports] = await Promise.all([
+        DripApi.listLots(50),
+        DripApi.listWeighings({ limit: 50 }),
+        DripApi.listReports(50)
+      ]);
+      bankLots.textContent = String(lots.length);
+      bankWeighings.textContent = String(weighings.length);
+      bankReports.textContent = String(reports.length);
+      serverState.textContent = 'OK';
+      renderLots(lots);
+      renderWeighings(weighings);
+      renderReports(reports);
+      setStatus('Dados do banco carregados com sucesso.', 'ok');
+    }
+
+    document.getElementById('saveConfigBtn').addEventListener('click', () => {
+      DripApi.setConfig({
+        baseUrl: baseUrlEl.value,
+        token: apiTokenEl.value,
+        enabled: apiEnabledEl.checked
+      });
+      loadConfigForm();
+      refreshLocal();
+      setStatus('Configuração salva neste dispositivo.', DripApi.isEnabled() ? 'ok' : 'warn');
+    });
+
+    document.getElementById('clearConfigBtn').addEventListener('click', () => {
+      if (!confirm('Desativar a conexão com a API neste dispositivo?')) return;
+      DripApi.clearConfig();
+      DripApi.clearSession();
+      loadConfigForm();
+      refreshLocal();
+    });
+
+    document.getElementById('testApiBtn').addEventListener('click', () => testApi().catch((error) => {
+      console.error(error);
+      setStatus(`Falha ao conectar na API: ${error && error.message ? error.message : String(error)}`, 'error');
+    }));
+
+    document.getElementById('loginBtn').addEventListener('click', async () => {
+      const identifier = document.getElementById('loginId').value.trim();
+      const password = document.getElementById('loginPassword').value;
+      if (!identifier || !password) {
+        setStatus('Informe login e senha para entrar na API.', 'warn');
+        return;
+      }
+      try {
+        const result = await DripApi.login(identifier, password);
+        document.getElementById('loginPassword').value = '';
+        renderSession();
+        setStatus(`Sessão iniciada para ${result.user && result.user.name ? result.user.name : identifier}.`, 'ok');
+      } catch (error) {
+        console.error(error);
+        setStatus(`Falha no login da API: ${error && error.message ? error.message : String(error)}`, 'error');
+      }
+    });
+
+    document.getElementById('logoutBtn').addEventListener('click', () => {
+      DripApi.clearSession();
+      renderSession();
+      setStatus('Sessão da API removida deste dispositivo.', 'warn');
+    });
+
+    document.getElementById('refreshLocalBtn').addEventListener('click', refreshLocal);
+    document.getElementById('loadBankBtn').addEventListener('click', () => loadBankData().catch((error) => {
+      console.error(error);
+      setStatus(`Falha ao buscar dados do banco: ${error && error.message ? error.message : String(error)}`, 'error');
+    }));
+
+    document.getElementById('syncBtn').addEventListener('click', () => syncLocal().catch((error) => {
+      console.error(error);
+      setStatus(`Falha ao sincronizar: ${error && error.message ? error.message : String(error)}`, 'error');
+    }));
+
+    document.getElementById('showSnapshotBtn').addEventListener('click', () => {
+      snapshotOutput.value = buildSnapshotText();
+      setStatus('JSON local carregado para inspeção.', 'ok');
+    });
+
+    document.getElementById('copySnapshotBtn').addEventListener('click', async () => {
+      const text = buildSnapshotText();
+      snapshotOutput.value = text;
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        await navigator.clipboard.writeText(text);
+        setStatus('JSON local copiado para a área de transferência.', 'ok');
+      } else {
+        setStatus('JSON local exibido. Selecione o texto para copiar manualmente.', 'warn');
+      }
+    });
+
+    loadConfigForm();
+    refreshLocal();
+    renderEmpty(lotsList, 'Toque em Buscar no banco para consultar a API.');
+    renderEmpty(weighingsList, 'Toque em Buscar no banco para consultar a API.');
+    renderEmpty(reportsList, 'Toque em Buscar no banco para consultar a API.');
+  </script>
+</body>
+</html>
