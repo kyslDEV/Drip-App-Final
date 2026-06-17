@@ -889,6 +889,13 @@
       return text || '-';
     }
 
+    function joinDistinctValues(items, selector) {
+      return Array.from(new Set((items || [])
+        .map((item) => String(selector(item) || '').trim())
+        .filter(Boolean)))
+        .join(', ') || '-';
+    }
+
     function getAnalysisSheetSample(record) {
       const m0 = Number(record && record.gross) / 1000;
       const m1 = Number(record && record.packGrams) / 1000;
@@ -913,84 +920,10 @@
       };
     }
 
-    function groupAnalysisSheetRecords(records) {
-      const groups = new Map();
-      records.forEach((record) => {
-        const key = [
-          record.lote || 'Sem lote',
-          record.shift || record.turno || 'Sem turno',
-          record.fabDate || 'Sem data',
-          record.productBrand || record.species || 'Sem marca'
-        ].join('||');
-        if (!groups.has(key)) {
-          groups.set(key, {
-            lote: record.lote || '-',
-            shift: record.shift || record.turno || '-',
-            fabDate: record.fabDate || '-',
-            productBrand: record.productBrand || record.species || '-',
-            records: []
-          });
-        }
-        groups.get(key).records.push(record);
-      });
-      return Array.from(groups.values()).map((group) => {
-        group.records.sort(compareAnalysisSheetRecords);
-        return group;
-      });
-    }
-
-    function compareAnalysisSheetRecords(a, b) {
-      const explicitA = getRecordSampleOrder(a);
-      const explicitB = getRecordSampleOrder(b);
-      if (explicitA != null || explicitB != null) {
-        return (explicitA == null ? Number.MAX_SAFE_INTEGER : explicitA) - (explicitB == null ? Number.MAX_SAFE_INTEGER : explicitB);
-      }
-
-      const netDiff = Number(b && b.net || 0) - Number(a && a.net || 0);
-      if (netDiff) return netDiff;
-
-      const grossDiff = Number(b && b.gross || 0) - Number(a && a.gross || 0);
-      if (grossDiff) return grossDiff;
-
-      return Number(a && a.createdAt || 0) - Number(b && b.createdAt || 0);
-    }
-
-    function getRecordSampleOrder(record) {
-      const candidates = [
-        record && record.sampleNumber,
-        record && record.sample_number,
-        record && record.sampleIndex,
-        record && record.sample_index,
-        record && record.order,
-        record && record.ordem
-      ];
-      for (const value of candidates) {
-        const num = Number(value);
-        if (Number.isFinite(num) && num > 0) return num;
-      }
-      return null;
-    }
-
-    function chunkRecords(records, size) {
-      const chunks = [];
-      for (let i = 0; i < records.length; i += size) {
-        chunks.push(records.slice(i, i + size));
-      }
-      return chunks.length ? chunks : [[]];
-    }
-
     function createAnalysisSheetHtml(report, options) {
       const user = options && options.user ? options.user : {};
       const generatedAt = report.generatedAt || Date.now();
-      const finalized = (report.finalizedRecords || []).filter((record) => record.finalGross != null || record.finalNet != null);
-      const groups = groupAnalysisSheetRecords(finalized);
-      const blocks = [];
-
-      groups.forEach((group) => {
-        chunkRecords(group.records, 6).forEach((records) => {
-          blocks.push({ group, records });
-        });
-      });
+      const sheetData = DripData.buildAnalysisSheetData(report);
 
       const styles = `
         <style>
@@ -1030,6 +963,15 @@
           .legend td{height:16px;text-align:left;background:#f8fbfa;color:#405550;border-color:#d8e3df}
           .footer-note{text-align:right;margin-top:3px;color:#64736f;font-weight:700}
           .no-border{border:0}
+          .sheet-overview{margin-top:4px;border:1px solid #c9d7d2}
+          .sheet-overview td{height:18px}
+          .sheet-status{font-weight:900;text-transform:uppercase;letter-spacing:.05em}
+          .sheet-status.closed{color:#9a3412}
+          .sheet-status.open{color:#0f6b5f}
+          .analysis-slot{margin-top:6px;border:1px solid #c9d7d2;background:#fff;padding:4px}
+          .analysis-slot.is-empty{display:flex;align-items:center;justify-content:center;min-height:140px;border-style:dashed;background:#f7faf9;color:#5f726d;font-weight:700}
+          .analysis-slot-title{font-size:10px;font-weight:900;letter-spacing:.04em;text-transform:uppercase;color:#17302c;margin:0 0 4px}
+          .slot-note{font-size:7.5px;color:#5f726d;font-weight:700}
         </style>`;
 
       function sampleTable(record, index) {
@@ -1065,9 +1007,12 @@
         </td>`;
       }
 
-      function renderBlock(block, blockIndex) {
-        const group = block.group || {};
-        const records = block.records || [];
+      function renderAnalysisSlot(analysis, slotIndex, sheet) {
+        if (!analysis) {
+          return `<section class="analysis-slot is-empty">Slot ${slotIndex + 1} aguardando proxima analise.</section>`;
+        }
+
+        const records = analysis.records || [];
         const samples = Array.from({ length: 6 }, (_, idx) => records[idx] || null);
         const sampleData = samples.map((record) => record ? getAnalysisSheetSample(record) : null);
         const validPercents = sampleData
@@ -1080,30 +1025,34 @@
           ? finalAveragePercents.reduce((sum, value) => sum + value, 0) / 6
           : null;
         const hasAnomaly = sampleData.some((sample) => sample && sample.anomaly) || validPercents.length !== 6;
-        const brand = normalizeAnalysisBrand(group.productBrand || user.productBrand || '-');
+        const brand = normalizeAnalysisBrand(analysis.productBrand || user.productBrand || '-');
+        const monitor = joinDistinctValues(records, (record) => record.monitor);
+        const plantName = analysis.plantName || joinDistinctValues(records, (record) => record.plantName);
+        const analysisDate = formatDateOnly(analysis.lastFinalAt || analysis.firstCreatedAt || generatedAt);
+        const analysisLabel = analysis.partCount > 1
+          ? `Analise ${analysis.analysisNumber} - Parte ${analysis.partNumber}/${analysis.partCount}`
+          : `Analise ${analysis.analysisNumber}`;
 
-        return `<section class="sheet">
-          <table class="header top-card">
-            <tr>
-              <td colspan="3" class="brand-cell"><span class="logo">Friato</span><span class="brand-sub">Alimentos</span></td>
-              <td colspan="11" class="title">PLANILHA DE ANALISE DE DRIP TEST</td>
-              <td colspan="4" class="docmeta">Codigo: PAC-QUA-017-PL 01<br>Revisao: 015<br>Data da Revisao: 11/08/2025</td>
-            </tr>
-          </table>
+        return `<section class="analysis-slot">
+          <p class="analysis-slot-title">${escapeHtml(analysisLabel)}<span class="slot-note"> | Folha ${sheet.sheetNumber} | Slot ${slotIndex + 1}</span></p>
           <table class="meta">
             <tr>
               <td colspan="2" class="label">Turno</td>
-              <td colspan="2">${escapeHtml(group.shift || user.shift || user.turno || '-')}</td>
+              <td colspan="2">${escapeHtml(analysis.shift || user.shift || user.turno || '-')}</td>
               <td colspan="3" class="label">Data de Producao</td>
-              <td colspan="2">${escapeHtml(formatDateOnly(group.fabDate || user.fabDate))}</td>
+              <td colspan="2">${escapeHtml(formatDateOnly(analysis.fabDate || user.fabDate))}</td>
               <td colspan="2" class="label">Lote</td>
-              <td colspan="2">${escapeHtml(group.lote || user.lot || '-')}</td>
+              <td colspan="2">${escapeHtml(analysis.lote || user.lot || '-')}</td>
               <td colspan="3" class="label">Data da analise</td>
-              <td colspan="2">${escapeHtml(formatDateOnly(generatedAt))}</td>
+              <td colspan="2">${escapeHtml(analysisDate)}</td>
             </tr>
             <tr>
               <td colspan="2" class="label">Marca</td>
-              <td colspan="16">${escapeHtml(brand)}</td>
+              <td colspan="4">${escapeHtml(brand)}</td>
+              <td colspan="2" class="label">Setor</td>
+              <td colspan="4">${escapeHtml(plantName || '-')}</td>
+              <td colspan="2" class="label">Monitor</td>
+              <td colspan="4">${escapeHtml(monitor)}</td>
             </tr>
           </table>
           <table style="margin-top:3px">
@@ -1123,12 +1072,35 @@
           <table class="legend">
             <tr><td colspan="18"><strong>Legenda:</strong> MI: Mercado Interno &nbsp;&nbsp;&nbsp; ME: Mercado Externo &nbsp;&nbsp;&nbsp; UE: Uniao Europeia ${hasAnomaly ? '&nbsp;&nbsp;&nbsp; <strong>ANOMALIA:</strong> amostra incompleta ou M3 ausente.' : ''}</td></tr>
           </table>
-          <div class="small footer-note">Bloco ${blockIndex + 1} gerado pelo DripTest App</div>
         </section>`;
       }
 
-      const htmlBlocks = blocks.length
-        ? blocks.map(renderBlock).join('')
+      const htmlBlocks = (sheetData.sheets || []).length
+        ? sheetData.sheets.map((sheet) => {
+          const slots = Array.from({ length: 3 }, (_, slotIndex) => renderAnalysisSlot(sheet.analyses[slotIndex] || null, slotIndex, sheet)).join('');
+          return `<section class="sheet">
+            <table class="header top-card">
+              <tr>
+                <td colspan="3" class="brand-cell"><span class="logo">Friato</span><span class="brand-sub">Alimentos</span></td>
+                <td colspan="11" class="title">PLANILHA DE ANALISE DE DRIP TEST</td>
+                <td colspan="4" class="docmeta">Codigo: PAC-QUA-017-PL 01<br>Revisao: 015<br>Data da Revisao: 11/08/2025</td>
+              </tr>
+            </table>
+            <table class="sheet-overview">
+              <tr>
+                <td colspan="3" class="label">Folha</td>
+                <td colspan="2">${sheet.sheetNumber}/${sheetData.totalSheets}</td>
+                <td colspan="3" class="label">Status</td>
+                <td colspan="2" class="sheet-status ${sheet.status}">${sheet.status === 'closed' ? 'Fechada' : 'Aberta'}</td>
+                <td colspan="4" class="label">Analises preenchidas</td>
+                <td colspan="2">${sheet.analyses.length}/3</td>
+                <td colspan="2" class="small">Gerado em ${escapeHtml(formatDate(generatedAt))}</td>
+              </tr>
+            </table>
+            ${slots}
+            <div class="small footer-note">Folha ${sheet.sheetNumber} gerada pelo DripTest App</div>
+          </section>`;
+        }).join('')
         : `<section class="sheet"><p>Nenhuma amostra finalizada disponivel para gerar a planilha de analise.</p></section>`;
 
       const autoPrint = !(options && options.nativePdf);
