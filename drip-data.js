@@ -3,6 +3,7 @@
   const STORE_KEY = 'driptest_store_v2';
   const STORE_VERSION = 2;
   const STANDARD_SAMPLE_COUNT = 6;
+  const ANALYSIS_SHEET_SLOT_COUNT = 3;
 
   const immersionRanges = [
     { min: 0, max: 800, minutes: 65 },
@@ -622,6 +623,161 @@
         };
       })
       .sort((a, b) => a.key.localeCompare(b.key, 'pt-BR'));
+  }
+
+  function getRecordSampleOrder(record) {
+    const candidates = [
+      record && record.sampleNumber,
+      record && record.sample_number,
+      record && record.sampleIndex,
+      record && record.sample_index,
+      record && record.order,
+      record && record.ordem
+    ];
+
+    for (let index = 0; index < candidates.length; index += 1) {
+      const value = Number(candidates[index]);
+      if (Number.isFinite(value) && value > 0) return value;
+    }
+
+    return null;
+  }
+
+  function compareAnalysisSheetRecords(a, b) {
+    const explicitA = getRecordSampleOrder(a);
+    const explicitB = getRecordSampleOrder(b);
+    if (explicitA != null || explicitB != null) {
+      return (explicitA == null ? Number.MAX_SAFE_INTEGER : explicitA) - (explicitB == null ? Number.MAX_SAFE_INTEGER : explicitB);
+    }
+
+    const netDiff = Number(b && b.net || 0) - Number(a && a.net || 0);
+    if (netDiff) return netDiff;
+
+    const grossDiff = Number(b && b.gross || 0) - Number(a && a.gross || 0);
+    if (grossDiff) return grossDiff;
+
+    return Number(a && a.createdAt || 0) - Number(b && b.createdAt || 0);
+  }
+
+  function chunkItems(items, size) {
+    const chunks = [];
+    for (let index = 0; index < items.length; index += size) {
+      chunks.push(items.slice(index, index + size));
+    }
+    return chunks;
+  }
+
+  function groupAnalysisSheetRecords(records) {
+    const groups = new Map();
+
+    records.forEach((record) => {
+      const lote = normalizeGroupKey(record && record.lote, 'Sem lote');
+      const shift = normalizeShift(record && (record.shift || record.turno)) || 'Sem turno';
+      const fabDate = normalizeGroupKey(record && record.fabDate, 'Sem data');
+      const productBrand = normalizeProductBrand(record && record.productBrand, record && record.species);
+      const plantName = normalizeGroupKey(record && record.plantName, 'Setor não informado');
+      const key = [lote, shift, fabDate, productBrand, plantName].join('||');
+
+      if (!groups.has(key)) {
+        groups.set(key, {
+          key,
+          lote,
+          shift,
+          fabDate,
+          productBrand,
+          plantName,
+          records: []
+        });
+      }
+
+      groups.get(key).records.push(record);
+    });
+
+    return Array.from(groups.values())
+      .map((group) => {
+        const sortedRecords = group.records.slice().sort(compareAnalysisSheetRecords);
+        return Object.assign({}, group, {
+          records: sortedRecords,
+          firstCreatedAt: minNumber(sortedRecords, (record) => record.createdAt),
+          lastFinalAt: maxNumber(sortedRecords, (record) => record.finalAt)
+        });
+      })
+      .sort((a, b) => {
+        const timeA = Number.isFinite(a.lastFinalAt) ? a.lastFinalAt : (Number.isFinite(a.firstCreatedAt) ? a.firstCreatedAt : 0);
+        const timeB = Number.isFinite(b.lastFinalAt) ? b.lastFinalAt : (Number.isFinite(b.firstCreatedAt) ? b.firstCreatedAt : 0);
+        if (timeA !== timeB) return timeA - timeB;
+        return a.key.localeCompare(b.key, 'pt-BR');
+      });
+  }
+
+  function buildAnalysisSheetData(report) {
+    const sourceReport = report && typeof report === 'object' ? report : buildReportData();
+    const finalizedRecords = (sourceReport.finalizedRecords || [])
+      .filter((record) => record && (record.finalGross != null || record.finalNet != null));
+    const analyses = [];
+    let analysisNumber = 0;
+
+    groupAnalysisSheetRecords(finalizedRecords).forEach((group) => {
+      const chunks = chunkItems(group.records, STANDARD_SAMPLE_COUNT);
+      const partCount = chunks.length;
+
+      chunks.forEach((records, partIndex) => {
+        analysisNumber += 1;
+        analyses.push({
+          key: partCount > 1 ? `${group.key}::part-${partIndex + 1}` : group.key,
+          analysisNumber,
+          partNumber: partIndex + 1,
+          partCount,
+          lote: group.lote,
+          shift: group.shift,
+          fabDate: group.fabDate,
+          productBrand: group.productBrand,
+          plantName: group.plantName,
+          records,
+          sampleCount: records.length,
+          firstCreatedAt: minNumber(records, (record) => record.createdAt),
+          lastFinalAt: maxNumber(records, (record) => record.finalAt),
+          isPartial: records.length < STANDARD_SAMPLE_COUNT
+        });
+      });
+    });
+
+    const sheets = [];
+    if (!analyses.length) {
+      sheets.push({
+        sheetNumber: 1,
+        status: 'open',
+        analyses: [],
+        availableSlots: ANALYSIS_SHEET_SLOT_COUNT
+      });
+    } else {
+      for (let index = 0; index < analyses.length; index += ANALYSIS_SHEET_SLOT_COUNT) {
+        const sheetNumber = sheets.length + 1;
+        const analysisChunk = analyses
+          .slice(index, index + ANALYSIS_SHEET_SLOT_COUNT)
+          .map((analysis, slotIndex) => Object.assign({}, analysis, {
+            sheetNumber,
+            slotNumber: slotIndex + 1
+          }));
+
+        sheets.push({
+          sheetNumber,
+          status: analysisChunk.length === ANALYSIS_SHEET_SLOT_COUNT ? 'closed' : 'open',
+          analyses: analysisChunk,
+          availableSlots: ANALYSIS_SHEET_SLOT_COUNT - analysisChunk.length
+        });
+      }
+    }
+
+    const openSheet = sheets.find((sheet) => sheet.status === 'open');
+
+    return {
+      generatedAt: sourceReport.generatedAt || Date.now(),
+      totalAnalyses: analyses.length,
+      totalSheets: sheets.length,
+      openSheetNumber: openSheet ? openSheet.sheetNumber : null,
+      sheets
+    };
   }
 
   function buildGroupSummary(records, selector, fallback) {
@@ -1397,6 +1553,7 @@
     LEGACY_KEY,
     STORE_KEY,
     STORE_VERSION,
+    ANALYSIS_SHEET_SLOT_COUNT,
     getFinalWeight,
     calculateAbsorption,
     calculateAbsorptionPercent,
@@ -1414,6 +1571,7 @@
     saveAbsorptionTest,
     clearAbsorptionTests,
     buildReportData,
+    buildAnalysisSheetData,
     buildReportText,
     buildWhatsappReportText,
     buildReportCsv,
