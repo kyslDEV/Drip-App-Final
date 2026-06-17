@@ -616,6 +616,7 @@
           <button id="addInitialBtn" class="primary" type="submit">Adicionar</button>
           <button id="sortBtn" class="ghost" type="button" aria-pressed="false">Ordenar</button>
           <button id="clearBtn" class="warn" type="button">Limpar</button>
+          <button id="newAnalysisBtn" class="ghost" type="button">Nova análise</button>
         </div>
       </form>
 
@@ -765,6 +766,7 @@
     }
     const sortBtn = document.getElementById('sortBtn');
     const clearBtn = document.getElementById('clearBtn');
+    const newAnalysisBtn = document.getElementById('newAnalysisBtn');
     const tbody = document.getElementById('tbody');
     const limitHint = document.getElementById('limitHint');
     const syncStatus = document.getElementById('syncStatus');
@@ -789,6 +791,35 @@
       packEl.value = '0.006';
       speciesEl.value = 'Frango Friato';
       grossEl.focus();
+    });
+
+    newAnalysisBtn.addEventListener('click', async () => {
+      const absorptionTests = DripData.getAbsorptionTests();
+      const hasActivePackage = records.length || absorptionTests.length;
+      const message = hasActivePackage
+        ? 'Salvar a analise atual e iniciar um novo lote?'
+        : 'Iniciar um novo lote sem registros ativos?';
+      if (!confirm(message)) return;
+
+      try {
+        records.forEach((record) => {
+          DripData.cancelNativeReminder(record.id).catch(() => {});
+        });
+
+        if (hasActivePackage) {
+          DripData.archiveCurrentAnalysis({
+            user: getUserConfig()
+          });
+        }
+
+        localStorage.removeItem('drip_user');
+        records = [];
+        sortedByNet = false;
+        window.location.href = 'login.html';
+      } catch (error) {
+        console.error(error);
+        alert('Nao foi possivel iniciar nova analise: ' + (error && error.message ? error.message : String(error)));
+      }
     });
 
     tbody.addEventListener('click', (event) => {
