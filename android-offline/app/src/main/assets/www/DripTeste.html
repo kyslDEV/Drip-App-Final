@@ -785,18 +785,9 @@
     });
 
     clearBtn.addEventListener('click', () => {
-      if (!records.length) return;
-      if (!confirm('Remover todos os registros?')) return;
-      records.forEach((record) => {
-        DripData.cancelNativeReminder(record.id).catch(() => {});
-      });
-      records = [];
-      sortedByNet = false;
-      sortBtn.setAttribute('aria-pressed', 'false');
-      sortBtn.textContent = 'Ordenar';
-      saveToStorage();
-      render();
-      initializeSyncStatus();
+      grossEl.value = '';
+      packEl.value = '0.006';
+      speciesEl.value = 'Frango Friato';
       grossEl.focus();
     });
 
@@ -858,10 +849,10 @@
       records.push(record);
 
       saveToStorage();
+      render();
       grossEl.value = '';
       packEl.value = '0.006';
       speciesEl.value = 'Frango Friato';
-      render();
       grossEl.focus();
 
       await syncRecordToBackend(record);
