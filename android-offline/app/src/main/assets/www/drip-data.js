@@ -174,6 +174,7 @@
       version: STORE_VERSION,
       initialRecords: [],
       absorptionTests: [],
+      archivedAnalyses: [],
       updatedAt: Date.now()
     };
   }
@@ -303,6 +304,34 @@
     };
   }
 
+  function normalizeArchivedAnalysis(item) {
+    const initialRecords = Array.isArray(item.initialRecords) ? item.initialRecords.map(normalizeInitialRecord) : [];
+    const absorptionTests = Array.isArray(item.absorptionTests) ? item.absorptionTests.map(normalizeAbsorptionTest) : [];
+    const report = item.report && typeof item.report === 'object' ? clone(item.report) : null;
+    const user = item.user && typeof item.user === 'object' ? clone(item.user) : {};
+    const lot = user.lot || (initialRecords[0] && initialRecords[0].lote) || '';
+
+    return {
+      id: String(item.id || createId()),
+      archivedAt: Number(item.archivedAt || Date.now()),
+      status: String(item.status || 'archived'),
+      user,
+      summary: {
+        lot,
+        monitor: user.monitorName || user.monitor || (initialRecords[0] && initialRecords[0].monitor) || '',
+        plantName: user.plantName || user.sectorName || (initialRecords[0] && initialRecords[0].plantName) || '',
+        shift: user.shift || user.turno || (initialRecords[0] && (initialRecords[0].shift || initialRecords[0].turno)) || '',
+        fabricationDate: user.fabDate || (initialRecords[0] && initialRecords[0].fabDate) || '',
+        initialRecords: initialRecords.length,
+        finalizedRecords: initialRecords.filter((record) => record.finalNet != null || String(record.status).toLowerCase() === 'final').length,
+        absorptionTests: absorptionTests.length
+      },
+      initialRecords,
+      absorptionTests,
+      report
+    };
+  }
+
   function syncLegacy(records) {
     try {
       global.localStorage.setItem(LEGACY_KEY, JSON.stringify(records.map(normalizeInitialRecord)));
@@ -314,11 +343,13 @@
   function normalizeStore(store) {
     const initialRecords = Array.isArray(store.initialRecords) ? store.initialRecords.map(normalizeInitialRecord) : [];
     const absorptionTests = Array.isArray(store.absorptionTests) ? store.absorptionTests.map(normalizeAbsorptionTest) : [];
+    const archivedAnalyses = Array.isArray(store.archivedAnalyses) ? store.archivedAnalyses.map(normalizeArchivedAnalysis) : [];
 
     return {
       version: STORE_VERSION,
       initialRecords,
       absorptionTests,
+      archivedAnalyses,
       updatedAt: Date.now()
     };
   }
@@ -411,6 +442,38 @@
     const store = loadStore();
     store.absorptionTests = [];
     return saveStore(store).absorptionTests;
+  }
+
+  function getArchivedAnalyses() {
+    return clone(loadStore().archivedAnalyses)
+      .sort((a, b) => Number(b.archivedAt || 0) - Number(a.archivedAt || 0));
+  }
+
+  function archiveCurrentAnalysis(options) {
+    const store = loadStore();
+    const initialRecords = Array.isArray(store.initialRecords) ? store.initialRecords : [];
+    const absorptionTests = Array.isArray(store.absorptionTests) ? store.absorptionTests : [];
+
+    if (!initialRecords.length && !absorptionTests.length) {
+      return null;
+    }
+
+    // O relatorio e calculado antes da limpeza para congelar o pacote ativo.
+    const report = buildReportData();
+    const archived = normalizeArchivedAnalysis({
+      id: createId(),
+      archivedAt: Date.now(),
+      user: options && options.user ? options.user : {},
+      initialRecords,
+      absorptionTests,
+      report
+    });
+
+    store.archivedAnalyses = [archived].concat(store.archivedAnalyses || []);
+    store.initialRecords = [];
+    store.absorptionTests = [];
+    saveStore(store);
+    return clone(archived);
   }
 
   // Consolida pesagens, testes e medias por lote para alimentar telas de laudo e exportacoes.
@@ -712,35 +775,55 @@
 
   function buildAnalysisSheetData(report) {
     const sourceReport = report && typeof report === 'object' ? report : buildReportData();
-    const finalizedRecords = (sourceReport.finalizedRecords || [])
-      .filter((record) => record && (record.finalGross != null || record.finalNet != null));
+    const store = loadStore();
     const analyses = [];
     let analysisNumber = 0;
 
-    groupAnalysisSheetRecords(finalizedRecords).forEach((group) => {
-      const chunks = chunkItems(group.records, STANDARD_SAMPLE_COUNT);
-      const partCount = chunks.length;
+    function appendAnalysisGroups(records, source) {
+      const finalizedRecords = (records || [])
+        .filter((record) => record && (record.finalGross != null || record.finalNet != null));
 
-      chunks.forEach((records, partIndex) => {
-        analysisNumber += 1;
-        analyses.push({
-          key: partCount > 1 ? `${group.key}::part-${partIndex + 1}` : group.key,
-          analysisNumber,
-          partNumber: partIndex + 1,
-          partCount,
-          lote: group.lote,
-          shift: group.shift,
-          fabDate: group.fabDate,
-          productBrand: group.productBrand,
-          plantName: group.plantName,
-          records,
-          sampleCount: records.length,
-          firstCreatedAt: minNumber(records, (record) => record.createdAt),
-          lastFinalAt: maxNumber(records, (record) => record.finalAt),
-          isPartial: records.length < STANDARD_SAMPLE_COUNT
+      groupAnalysisSheetRecords(finalizedRecords).forEach((group) => {
+        const chunks = chunkItems(group.records, STANDARD_SAMPLE_COUNT);
+        const partCount = chunks.length;
+
+        chunks.forEach((chunkRecords, partIndex) => {
+          analysisNumber += 1;
+          analyses.push({
+            key: `${source.id || 'active'}::${partCount > 1 ? `${group.key}::part-${partIndex + 1}` : group.key}`,
+            sourceId: source.id || '',
+            sourceType: source.type || 'active',
+            archivedAt: source.archivedAt || null,
+            analysisNumber,
+            partNumber: partIndex + 1,
+            partCount,
+            lote: group.lote,
+            shift: group.shift,
+            fabDate: group.fabDate,
+            productBrand: group.productBrand,
+            plantName: group.plantName,
+            records: chunkRecords,
+            sampleCount: chunkRecords.length,
+            firstCreatedAt: minNumber(chunkRecords, (record) => record.createdAt),
+            lastFinalAt: maxNumber(chunkRecords, (record) => record.finalAt),
+            isPartial: chunkRecords.length < STANDARD_SAMPLE_COUNT
+          });
         });
       });
-    });
+    }
+
+    (store.archivedAnalyses || [])
+      .slice()
+      .sort((a, b) => Number(a.archivedAt || 0) - Number(b.archivedAt || 0))
+      .forEach((archived) => {
+        appendAnalysisGroups(archived.initialRecords, {
+          id: archived.id,
+          type: 'archived',
+          archivedAt: archived.archivedAt
+        });
+      });
+
+    appendAnalysisGroups(sourceReport.finalizedRecords || [], { id: 'active', type: 'active' });
 
     const sheets = [];
     if (!analyses.length) {
@@ -1570,6 +1653,8 @@
     getAbsorptionTests,
     saveAbsorptionTest,
     clearAbsorptionTests,
+    getArchivedAnalyses,
+    archiveCurrentAnalysis,
     buildReportData,
     buildAnalysisSheetData,
     buildReportText,
