@@ -46,6 +46,7 @@ O DripTest centraliza esse fluxo em uma experiencia unica:
 - Botao de nova analise para iniciar novo lote preservando registros anteriores.
 - Ajuste no limpar da pesagem inicial: limpa somente as entradas, mantendo os registros para avaliacao.
 - Preparacao do caminho para historico estruturado no app.
+- Evidencia preliminar de produtividade com reducao do tempo de analise de 53-61 min para 24-26 min por ciclo.
 - Materiais de apresentacao e dossie adicionados aos documentos do projeto.
 
 ## Arquitetura resumida
@@ -133,6 +134,8 @@ Consulte a documentacao especifica antes de executar em ambiente integrado:
 
 O DripTest esta em estado de MVP operacional avancado, adequado para piloto controlado, validacao presencial e evolucao com usuarios reais.
 
+Em uso piloto autorizado no setor de Garantia da Qualidade, os dados comparativos preliminares indicam ganho estimado de produtividade de 50%-60%, com automacao de calculos, geracao de planilha preenchida e laudo tecnico estruturado.
+
 Antes de tratar como producao corporativa plena, ainda devem ser consolidados pontos como:
 
 - historico completo e tela de supervisor;
@@ -149,6 +152,8 @@ Os materiais abaixo ajudam a apresentar o valor do projeto para lideranca, quali
 - `docs/APRESENTACAO_GERENTE_QUALIDADE.md`
 - `docs/DripTest_Dossie_Apresentacao_Producao.docx`
 - `docs/Carta_de_Apresentacao_Kaio_Yuri_Sa_Lima.pdf`
+- `docs/EVIDENCIA_IMPACTO_PRODUTIVIDADE.md`
+- `docs/Relatorio_Resultados_Produtividade_Drip_App.pdf`
 
 ## Documentacao relacionada
 
