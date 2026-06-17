@@ -148,6 +148,7 @@ Os materiais abaixo ajudam a apresentar o valor do projeto para lideranca, quali
 
 - `docs/APRESENTACAO_GERENTE_QUALIDADE.md`
 - `docs/DripTest_Dossie_Apresentacao_Producao.docx`
+- `docs/Carta_de_Apresentacao_Kaio_Yuri_Sa_Lima.pdf`
 
 ## Documentacao relacionada
 
