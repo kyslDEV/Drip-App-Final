@@ -322,6 +322,26 @@
   <script src="drip-sync.js"></script>
   <script src="drip-ui.js?v=ui-2026-3"></script>
   <script>
+    const accessRole = (() => {
+      try {
+        return String(localStorage.getItem('drip_access_role') || '').trim().toLowerCase();
+      } catch (error) {
+        console.warn('Nao foi possivel ler o perfil de acesso local', error);
+        return '';
+      }
+    })();
+
+    if (accessRole !== 'dev') {
+      let target = 'index.html';
+      if (accessRole === 'monitor') {
+        target = 'login.html';
+      } else if (accessRole === 'supervisor') {
+        target = 'DripSupervisor.html';
+      }
+      window.location.replace(target);
+    }
+
+    if (accessRole === 'dev') {
     const baseUrlEl = document.getElementById('baseUrl');
     const apiTokenEl = document.getElementById('apiToken');
     const apiEnabledEl = document.getElementById('apiEnabled');
@@ -581,6 +601,7 @@
     renderEmpty(lotsList, 'Toque em Buscar no banco para consultar a API.');
     renderEmpty(weighingsList, 'Toque em Buscar no banco para consultar a API.');
     renderEmpty(reportsList, 'Toque em Buscar no banco para consultar a API.');
+    }
   </script>
 </body>
 </html>

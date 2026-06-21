@@ -1244,6 +1244,78 @@
       row.appendChild(td);
     }
 
+    function hasBackendSync(record) {
+      return Boolean(record && record.backendId && window.DripApi && DripApi.isEnabled());
+    }
+
+    function applySyncState(recordId, patch) {
+      const latest = records.find((item) => item.id === recordId);
+      if (!latest) return null;
+      Object.assign(latest, patch);
+      if (!patch || !patch.syncError) delete latest.syncError;
+      saveToStorage();
+      records = loadFromStorage();
+      return records.find((item) => item.id === recordId) || null;
+    }
+
+    function buildFinalizePayload(record) {
+      return {
+        final_net_g: Math.round(record.finalNet),
+        final_gross_g: Number.isFinite(record.finalGross) ? Math.round(record.finalGross) : undefined,
+        final_package_kg: record.finalPackKg != null ? Number(record.finalPackKg) : undefined,
+        final_package_g: record.finalPackGrams != null ? Math.round(record.finalPackGrams) : undefined,
+        final_weighed_at: new Date(record.finalAt || Date.now()).toISOString()
+      };
+    }
+
+    async function syncFinalizationToBackend(recordId) {
+      const record = records.find((item) => item.id === recordId);
+      if (!hasBackendSync(record)) return;
+
+      applySyncState(recordId, { syncStatus: 'pending' });
+      try {
+        const updated = await DripApi.finalizeWeighing(record.backendId, buildFinalizePayload(record));
+        applySyncState(recordId, {
+          backendId: updated && updated.id ? String(updated.id) : record.backendId,
+          syncStatus: 'synced',
+          syncedAt: Date.now(),
+          syncError: ''
+        });
+      } catch (error) {
+        console.error(error);
+        applySyncState(recordId, {
+          syncStatus: 'error',
+          syncError: error && error.message ? error.message : 'Falha ao enviar pesagem final.'
+        });
+      }
+
+      render();
+    }
+
+    async function syncReopenToBackend(recordId) {
+      const record = records.find((item) => item.id === recordId);
+      if (!hasBackendSync(record)) return;
+
+      applySyncState(recordId, { syncStatus: 'pending' });
+      try {
+        const updated = await DripApi.reopenWeighing(record.backendId);
+        applySyncState(recordId, {
+          backendId: updated && updated.id ? String(updated.id) : record.backendId,
+          syncStatus: 'synced',
+          syncedAt: Date.now(),
+          syncError: ''
+        });
+      } catch (error) {
+        console.error(error);
+        applySyncState(recordId, {
+          syncStatus: 'error',
+          syncError: error && error.message ? error.message : 'Falha ao reabrir a pesagem no backend.'
+        });
+      }
+
+      render();
+    }
+
     function finalizeRecord(id) {
       const record = records.find((item) => item.id === id);
       if (!record) return;
@@ -1322,6 +1394,7 @@
         alert('AVISO: absorÃ§Ã£o >= 8% detectada para este lote. Registrar nos relatÃ³rios e verificar lote.');
       }
       render();
+      void syncFinalizationToBackend(id);
     }
 
     function reopenRecord(id) {
@@ -1335,7 +1408,10 @@
       delete record.finalPackGrams;
       delete record.lossAbs;
       delete record.lossPct;
+      delete record.grossAbsPct;
+      delete record.marketIndicator;
       delete record.finalAt;
+      record.marketWarning = false;
       record.status = 'Inicial';
       DripData.scheduleNativeReminder(record, {
         title: 'Hora do gotejamento',
@@ -1345,6 +1421,7 @@
       saveToStorage();
       records = loadFromStorage();
       render();
+      void syncReopenToBackend(id);
     }
 
     function removeRecord(id) {

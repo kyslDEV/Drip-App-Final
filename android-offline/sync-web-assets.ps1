@@ -14,6 +14,7 @@ $files = @(
   'DripSettings.html',
   'DripAbsorption.html',
   'drip-data.js',
+  'drip-supervisor-data.js',
   'drip-api.js',
   'drip-sync.js',
   'drip-theme.css',

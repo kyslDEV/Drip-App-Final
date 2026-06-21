@@ -187,6 +187,19 @@
     });
   }
 
+  function finalizeWeighing(weighingId, payload) {
+    return request(`/weighings/${encodeURIComponent(weighingId)}/finalize`, {
+      method: 'PATCH',
+      body: JSON.stringify(payload)
+    });
+  }
+
+  function reopenWeighing(weighingId) {
+    return request(`/weighings/${encodeURIComponent(weighingId)}/reopen`, {
+      method: 'PATCH'
+    });
+  }
+
   function listLots(limit) {
     const query = limit ? `?limit=${encodeURIComponent(limit)}` : '';
     return request(`/lots${query}`, { method: 'GET' });
@@ -235,6 +248,8 @@
     getMe,
     createLot,
     createWeighing,
+    finalizeWeighing,
+    reopenWeighing,
     listLots,
     listWeighings,
     listReports,

@@ -306,6 +306,36 @@
       background: #f1f8f6;
       font-size: 12px;
     }
+    .ops-banner {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      padding: 12px 14px;
+      margin-bottom: 14px;
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      background: #f7fbf9;
+    }
+    .ops-banner strong { display: block; font-size: 13px; color: #173431; }
+    .ops-banner small { display: block; margin-top: 4px; color: var(--muted); line-height: 1.4; }
+    .ops-banner.is-ok { border-color: rgba(21, 104, 61, 0.22); background: #ebf8f1; }
+    .ops-banner.is-warn { border-color: rgba(184, 107, 0, 0.22); background: #fff8ea; }
+    .ops-banner.is-error { border-color: rgba(180, 35, 53, 0.24); background: #fff1f3; }
+    .source-tag {
+      min-height: 20px;
+      display: inline-flex;
+      align-items: center;
+      margin-top: 6px;
+      padding: 0 7px;
+      border-radius: 999px;
+      background: #eef4f2;
+      color: #42545f;
+      font-size: 10px;
+      font-weight: 900;
+      letter-spacing: .03em;
+      text-transform: uppercase;
+    }
     @media (max-width: 1120px) {
       .layout { grid-template-columns: 1fr; }
       .sidebar { position: static; }
@@ -335,7 +365,6 @@
       <nav class="nav">
         <a class="active" href="DripSupervisor.html">Supervisao</a>
         <a href="DripReports.html">Laudos e planilhas</a>
-        <a href="DripSettings.html">Banco e Dados</a>
         <a href="index.html">Perfis</a>
       </nav>
     </aside>
@@ -349,10 +378,16 @@
         </div>
         <div class="actions">
           <button class="btn btn-ghost" id="refreshBtn" type="button">Atualizar</button>
-          <button class="btn btn-primary" id="syncBankBtn" type="button">Consultar banco</button>
           <button class="btn btn-ghost" id="flowSimBtn" type="button">Fluxo de dados</button>
         </div>
       </header>
+
+      <section class="ops-banner panel is-warn" id="opsBanner" aria-live="polite">
+        <div>
+          <strong id="opsBannerTitle">Supervisor em modo local</strong>
+          <small id="opsBannerText">A tela usa os dados locais e, quando a integracao com a API ja estiver ativa neste dispositivo, atualiza a leitura unificada automaticamente.</small>
+        </div>
+      </section>
 
       <section class="filters-panel panel" aria-label="Filtros corporativos">
         <div class="chips" id="analysisChips"></div>
@@ -512,9 +547,10 @@
 
   <script src="drip-data.js?v=report-accents-3"></script>
   <script src="drip-api.js"></script>
-  <script src="drip-sync.js"></script>
+  <script src="drip-supervisor-data.js"></script>
   <script src="drip-ui.js?v=ui-2026-4"></script>
   <script>
+    const SupervisorData = window.DripSupervisorData;
     const STATE = {
       activeAnalysis: 'Todos',
       statusFilter: 'all',
@@ -527,7 +563,10 @@
       data: [],
       filtered: [],
       selectedLot: '',
-      timerId: null
+      timerId: null,
+      dataOriginLabel: 'Local',
+      dataOriginMessage: 'Este perfil acompanha os dados disponiveis no dispositivo.',
+      sourceSummary: { local: 0, server: 0, merged: 0 }
     };
 
     const ANALYSES = ['Todos', 'DripTest', 'Analise Microbiologica', 'Controle Quimico', 'Pesagem', 'Outras analises'];
@@ -539,6 +578,9 @@
     const changedFilterEl = document.getElementById('changedFilter');
     const searchInputEl = document.getElementById('searchInput');
     const liveClockEl = document.getElementById('liveClock');
+    const opsBannerEl = document.getElementById('opsBanner');
+    const opsBannerTitleEl = document.getElementById('opsBannerTitle');
+    const opsBannerTextEl = document.getElementById('opsBannerText');
     const kpisEl = document.getElementById('kpis');
     const alertsRowEl = document.getElementById('alertsRow');
     const overviewBodyEl = document.getElementById('overviewBody');
@@ -604,139 +646,26 @@
 
     function nowMs() { return Date.now(); }
 
-    function elapsedMin(start) {
-      const ms = start ? new Date(start).getTime() : NaN;
-      if (!Number.isFinite(ms)) return null;
-      return Math.max(0, (nowMs() - ms) / 60000);
-    }
-
-    function expectedAt(record) {
-      const start = record.createdAt || record.initialWeighedAt || record.created_at;
-      const time = Number(record.timeMin || record.time_min);
-      const ms = start ? new Date(start).getTime() : NaN;
-      if (!Number.isFinite(ms) || !Number.isFinite(time)) return null;
-      return ms + time * 60000;
-    }
-
-    function detectResult(record) {
-      const marketText = String(record.result || record.marketIndicator || record.market_indicator || '').toLowerCase();
-      if (marketText.includes('altera') || record.marketWarning || record.market_warning) return 'PENDENTE DE REVISAO';
-      if (record.finalNet == null && String(record.status || '').toLowerCase() !== 'final') return 'AGUARDANDO FINAL';
-      return 'Normal';
-    }
-
-    function mapStatus(record) {
-      const raw = String(record.status || '').toLowerCase();
-      if (raw === 'final' || raw === 'done' || raw === 'completed') return 'done';
-      if (raw === 'error' || raw === 'failed') return 'error';
-      if (record.finalNet != null || record.final_net_g != null || record.stage === 'Finalizado') return 'done';
-      if (record.stage && String(record.stage).toLowerCase().includes('aguard')) return 'waiting';
-      if (record.createdAt || record.created_at || record.initial_weighed_at) return 'running';
-      return 'waiting';
-    }
-
-    function stageFrom(record) {
-      if (record.stage) return String(record.stage);
-      if (record.finalNet != null || record.final_net_g != null) return 'Finalizado';
-      const planned = expectedAt(record);
-      if (planned && nowMs() >= planned) return 'Aguardando pesagem final';
-      if (record.createdAt || record.created_at || record.initial_weighed_at) return 'Em gotejamento';
-      return 'Pesagem inicial';
-    }
-
-    function analysisFrom(record) {
-      const a = String(record.analysisType || record.analysis_type || '').trim();
-      if (a) return a;
-      if (record.gross != null || record.finalNet != null || record.initial_gross_g != null) return 'DripTest';
-      return 'Outras analises';
-    }
-
-    function firstText() {
-      for (let i = 0; i < arguments.length; i += 1) {
-        const text = String(arguments[i] == null ? '' : arguments[i]).trim();
-        if (text) return text;
-      }
-      return '-';
-    }
-
     function normalizeLocal() {
       const report = DripData.buildReportData();
-      const rows = report.initialRecords || [];
-      return rows.map((r, idx) => {
-        const plannedAt = expectedAt(r);
-        const status = mapStatus(r);
-        const stage = stageFrom(r);
-        return {
-          id: r.id || r.weighingId || 'LOC-' + (idx + 1),
-          source: 'local',
-          analysisType: analysisFrom(r),
-          lot: firstText(r.lote, r.lot, 'Sem lote'),
-          createdAt: r.createdAt || r.initialWeighedAt || r.created_at,
-          plannedAt,
-          dripAt: r.dripAt || r.drippingAt || plannedAt,
-          elapsedMin: elapsedMin(r.createdAt || r.initialWeighedAt || r.created_at),
-          responsible: firstText(r.monitor, r.monitorName, '-'),
-          sampleType: firstText(r.species, r.productBrand, '-'),
-          productBrand: firstText(r.productBrand, r.species, '-'),
-          shift: firstText(r.shift, r.turno, '-'),
-          sector: firstText(r.plantName, r.sectorName, '-'),
-          fabDate: firstText(r.fabDate, '-'),
-          gross: r.gross,
-          net: r.net,
-          finalNet: r.finalNet,
-          dripPct: r.grossAbsPct || r.lossPct,
-          status,
-          stage,
-          result: detectResult(r),
-          observations: firstText(r.notes, r.obs, '-'),
-          raw: r
-        };
-      });
+      return SupervisorData.normalizeLocalRows(report, { nowMs: nowMs() });
     }
 
-    async function normalizeServer() {
-      if (!DripApi.isEnabled()) return [];
-      const weighings = await DripApi.listWeighings({ limit: 150 });
-      return (weighings || []).map((w) => {
-        const mapped = {
-          id: w.id || w.weighing_id || w.report_number || '-',
-          source: 'server',
-          analysisType: analysisFrom(w),
-          lot: firstText(w.lot_code, w.lote, 'Sem lote'),
-          createdAt: w.initial_weighed_at || w.created_at,
-          plannedAt: w.expected_at || null,
-          dripAt: w.drip_at || w.expected_at || null,
-          elapsedMin: elapsedMin(w.initial_weighed_at || w.created_at),
-          responsible: firstText(w.monitor_name, w.monitor, '-'),
-          sampleType: firstText(w.sample_type, w.product_brand, w.species, '-'),
-          productBrand: firstText(w.product_brand, w.species, '-'),
-          shift: firstText(w.shift, w.turno, '-'),
-          sector: firstText(w.plant_name, w.sector_name, '-'),
-          fabDate: firstText(w.fabrication_date, '-'),
-          gross: w.initial_gross_g,
-          net: w.initial_net_g,
-          finalNet: w.final_net_g,
-          dripPct: w.loss_pct,
-          observations: firstText(w.notes, '-'),
-          raw: w
-        };
-        mapped.status = mapStatus({ status: w.status, createdAt: w.created_at, finalNet: w.final_net_g });
-        mapped.stage = stageFrom({ stage: w.stage, finalNet: w.final_net_g, dripAt: mapped.dripAt, createdAt: mapped.createdAt });
-        mapped.result = detectResult(mapped);
-        return mapped;
-      });
+    function loadServerRows() {
+      return DripApi.listWeighings({ limit: 150 })
+        .then((rows) => SupervisorData.normalizeServerRows(rows, { nowMs: nowMs() }));
     }
 
-    function dedupe(records) {
-      const seen = new Set();
-      const out = [];
-      records.forEach((r) => {
-        const key = String(r.id) + '|' + String(r.createdAt || '');
-        if (seen.has(key)) return;
-        seen.add(key);
-        out.push(r);
-      });
-      return out;
+    function resolveOriginLabel(summary) {
+      const info = summary || { local: 0, server: 0, merged: 0 };
+      if (info.merged > 0 || (info.local > 0 && info.server > 0)) return 'Local + API';
+      if (info.server > 0 && info.local === 0) return 'API';
+      return 'Local';
+    }
+
+    function updateSourceState(rows) {
+      STATE.sourceSummary = SupervisorData.summarizeSources(rows);
+      STATE.dataOriginLabel = resolveOriginLabel(STATE.sourceSummary);
     }
 
     function buildChips() {
@@ -764,7 +693,7 @@
         if (STATE.changedFilter === 'changed' && r.result === 'Normal') return false;
         if (STATE.changedFilter === 'normal' && r.result !== 'Normal') return false;
         if (!q) return true;
-        const txt = [r.id, r.lot, r.analysisType, r.responsible, r.sampleType, r.productBrand, r.stage, r.result].join(' ').toLowerCase();
+        const txt = [r.id, r.clientRecordId, r.lot, r.analysisType, r.responsible, r.sampleType, r.productBrand, r.stage, r.result].join(' ').toLowerCase();
         return txt.includes(q);
       });
       sortFiltered();
@@ -796,6 +725,15 @@
       return '<span class="tag tag-error">Revisar</span>';
     }
 
+    function setOpsBanner(title, message, tone) {
+      opsBannerTitleEl.textContent = title;
+      opsBannerTextEl.textContent = message;
+      opsBannerEl.className = 'ops-banner panel';
+      opsBannerEl.classList.add(
+        tone === 'ok' ? 'is-ok' : tone === 'error' ? 'is-error' : 'is-warn'
+      );
+    }
+
     function groupBy(items, selector) {
       const map = new Map();
       items.forEach((item) => {
@@ -819,7 +757,7 @@
         ['Pendencias', pending, 'Itens aguardando etapa ou decisao'],
         ['Lotes no filtro', lots, 'Lotes envolvidos na visao atual'],
         ['Revisoes abertas', review, 'Pontos que exigem validacao supervisoria'],
-        ['Base de dados', DripApi.isEnabled() ? 'Local + API' : 'Local', 'Origem atual da supervisao'],
+        ['Base de dados', STATE.dataOriginLabel, STATE.dataOriginMessage],
         ['Registros', all.length, 'Total no recorte atual'],
         ['Atualizacao', '12s', 'Ciclo automatico da tela']
       ];
@@ -918,11 +856,17 @@
       }
       rows.forEach((r) => {
         const div = document.createElement('div');
+        const actions = [
+          '<button class="btn btn-ghost" type="button" data-detail="' + esc(r.id) + '">Ver detalhes</button>'
+        ];
+        if (r.clientRecordId && r.status !== 'done' && r.source !== 'server') {
+          actions.push('<a class="btn btn-ghost" href="DripTestF.html?finalizeId=' + encodeURIComponent(r.clientRecordId) + '">Ir para finalizacao</a>');
+        }
         div.className = 'review-item';
         div.innerHTML =
           '<strong>' + esc(r.lot) + ' | ' + esc(r.sampleType) + '</strong>' +
           '<small>' + esc(r.result) + ' | ' + esc(r.stage) + ' | Monitor: ' + esc(r.responsible) + '</small>' +
-          '<div class="mini-actions"><button class="btn btn-ghost" type="button" data-detail="' + esc(r.id) + '">Ver detalhes</button></div>';
+          '<div class="mini-actions">' + actions.join('') + '</div>';
         reviewQueueEl.appendChild(div);
       });
     }
@@ -1011,7 +955,7 @@
       renderReviewQueue();
       renderLots();
       renderHistory();
-      liveClockEl.textContent = 'Atualizado em ' + new Date().toLocaleString('pt-BR') + ' | ' + (DripApi.isEnabled() ? 'local + API' : 'base local');
+      liveClockEl.textContent = 'Atualizado em ' + new Date().toLocaleString('pt-BR') + ' | base ' + String(STATE.dataOriginLabel || 'Local').toLowerCase();
     }
 
     function openDetail(id) {
@@ -1037,7 +981,7 @@
         ['Status', row.stage],
         ['Revisao', row.result],
         ['Observacoes', row.observations || '-'],
-        ['Origem', row.source === 'server' ? 'Banco/API' : 'Local']
+        ['Origem', row.sourceLabel || STATE.dataOriginLabel || 'Local']
       ];
       detailGridEl.replaceChildren();
       entries.forEach((entry) => {
@@ -1077,13 +1021,46 @@
       window.print();
     }
 
-    async function loadData(syncServer) {
+    async function loadData() {
       const localRows = normalizeLocal();
-      let serverRows = [];
-      if (syncServer) {
-        try { serverRows = await normalizeServer(); } catch (error) { console.error(error); }
+      STATE.data = localRows;
+      updateSourceState(localRows);
+      STATE.dataOriginMessage = 'Origem atual da supervisao no recorte consolidado.';
+
+      if (!DripApi.isEnabled()) {
+        setOpsBanner(
+          'Supervisor em modo local',
+          'Este perfil acompanha a etapa da analise pelo dispositivo atual. A configuracao da API segue restrita ao modulo Dev.',
+          'warn'
+        );
+        applyFiltersAndRender();
+        return;
       }
-      STATE.data = dedupe(localRows.concat(serverRows));
+
+      try {
+        const serverRows = await loadServerRows();
+        STATE.data = SupervisorData.mergeRecords(localRows, serverRows, { nowMs: nowMs() });
+        updateSourceState(STATE.data);
+        STATE.dataOriginMessage = 'Leitura automatica consolidada entre dispositivo e API.';
+        setOpsBanner(
+          'Supervisor conectado automaticamente',
+          serverRows.length
+            ? 'As acoes do monitor estao sendo refletidas pela API e atualizadas nesta tela sem controle manual do supervisor.'
+            : 'A API esta ativa, mas ainda nao retornou pesagens para consolidacao. A base local continua visivel.',
+          serverRows.length ? 'ok' : 'warn'
+        );
+      } catch (error) {
+        console.error(error);
+        STATE.data = localRows;
+        updateSourceState(localRows);
+        STATE.dataOriginMessage = 'Leitura local mantida porque a consulta automatica da API falhou.';
+        setOpsBanner(
+          'Falha na leitura automatica da API',
+          error && error.message ? error.message : 'Nao foi possivel consultar a API agora. O supervisor segue com a base local.',
+          'error'
+        );
+      }
+
       applyFiltersAndRender();
     }
 
@@ -1152,8 +1129,7 @@
     }
 
     function bindEvents() {
-      document.getElementById('refreshBtn').addEventListener('click', () => loadData(false));
-      document.getElementById('syncBankBtn').addEventListener('click', () => loadData(true));
+      document.getElementById('refreshBtn').addEventListener('click', () => { void loadData(); });
       statusFilterEl.addEventListener('change', () => { STATE.statusFilter = statusFilterEl.value; STATE.page = 1; applyFiltersAndRender(); });
       changedFilterEl.addEventListener('change', () => { STATE.changedFilter = changedFilterEl.value; STATE.page = 1; applyFiltersAndRender(); });
       searchInputEl.addEventListener('input', () => { STATE.query = searchInputEl.value || ''; STATE.page = 1; applyFiltersAndRender(); });
@@ -1209,8 +1185,8 @@
       buildChips();
       bindEvents();
       renderFlowSteps();
-      await loadData(DripApi.isEnabled());
-      STATE.timerId = setInterval(() => loadData(DripApi.isEnabled()), LIVE_INTERVAL_MS);
+      await loadData();
+      STATE.timerId = setInterval(() => { void loadData(); }, LIVE_INTERVAL_MS);
     }
 
     boot();
